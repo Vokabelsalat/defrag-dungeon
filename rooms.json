@@ -6,5 +6,13 @@
     "color": "#e11d48",
     "path": "room-1/dist/index.html",
     "description": "Defragment the corrupted memory cluster by linking data blocks in correct numerical sequence!"
+  },
+  {
+    "id": "refrag-monday",
+    "title": "Refrag Monday",
+    "author": "Jakob Kusnick",
+    "color": "#e11d48",
+    "path": "room-2/dist/index.html",
+    "description": "Refragment the exhausted worker after an eventfull weekend getting ready for the next week on Monday!"
   }
 ]
