@@ -110,22 +110,22 @@ function getForkUrls() {
   return urls;
 }
 
-function validateAndReadRoom(distDir, username) {
+function validateAndReadRoom(distDir, username, roomLabel = 'room') {
   // 1. Check directory existence
   if (!fs.existsSync(distDir)) {
-    throw new Error(`Directory 'room/dist/' does not exist in fork for ${username}. Did the participant compile or place their files in room/dist?`);
+    throw new Error(`Directory '${roomLabel}/dist/' does not exist in fork for ${username}. Did the participant compile or place their files in ${roomLabel}/dist?`);
   }
 
   // 2. Check index.html
   const indexPath = path.join(distDir, 'index.html');
   if (!fs.existsSync(indexPath)) {
-    throw new Error(`Missing required entrypoint 'room/dist/index.html' for ${username}`);
+    throw new Error(`Missing required entrypoint '${roomLabel}/dist/index.html' for ${username}`);
   }
 
   // 3. Check room.json
   const metaPath = path.join(distDir, 'room.json');
   if (!fs.existsSync(metaPath)) {
-    throw new Error(`Missing required metadata file 'room/dist/room.json' for ${username}`);
+    throw new Error(`Missing required metadata file '${roomLabel}/dist/room.json' for ${username}`);
   }
 
   // 4. Validate room.json content
@@ -134,15 +134,15 @@ function validateAndReadRoom(distDir, username) {
     const raw = fs.readFileSync(metaPath, 'utf8');
     metadata = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`'room.json' contains invalid JSON syntax: ${err.message}`);
+    throw new Error(`'${roomLabel}/dist/room.json' contains invalid JSON syntax: ${err.message}`);
   }
 
   if (!metadata.title || typeof metadata.title !== 'string' || !metadata.title.trim()) {
-    throw new Error(`'room.json' must specify a non-empty "title" string`);
+    throw new Error(`'${roomLabel}/dist/room.json' must specify a non-empty "title" string`);
   }
 
   if (!metadata.author || typeof metadata.author !== 'string' || !metadata.author.trim()) {
-    throw new Error(`'room.json' must specify a non-empty "author" string`);
+    throw new Error(`'${roomLabel}/dist/room.json' must specify a non-empty "author" string`);
   }
 
   if (!metadata.color || typeof metadata.color !== 'string' || !metadata.color.trim()) {
@@ -197,6 +197,7 @@ async function run() {
   const assembledRooms = [];
   const errors = [];
   const tempDirsToClean = [];
+  const ROOM_CANDIDATES = ['room-1', 'room-2', 'room-3', 'room-4', 'room-5', 'room'];
 
   for (let i = 0; i < rawEntries.length; i++) {
     const raw = rawEntries[i];
@@ -214,11 +215,31 @@ async function run() {
     log(`\n[${i + 1}/${rawEntries.length}] Processing fork: ${colors.bold}${username}${colors.reset} ...`);
 
     try {
-      let distPath = '';
+      let repoRootPath = '';
 
       if (parsed.isLocal) {
-        distPath = path.resolve(process.cwd(), parsed.localPath);
-        log(`  📁 Reading local source: ${distPath}`);
+        const resolvedLocal = path.resolve(process.cwd(), parsed.localPath);
+        // If specified path is directly a dist directory (e.g. ./room-1/dist)
+        if (path.basename(resolvedLocal) === 'dist' || fs.existsSync(path.join(resolvedLocal, 'room.json'))) {
+          const meta = validateAndReadRoom(resolvedLocal, username, 'custom');
+          const targetRoomDir = path.join(ROOMS_DIR, username);
+          if (fs.existsSync(targetRoomDir)) {
+            fs.rmSync(targetRoomDir, { recursive: true, force: true });
+          }
+          copyFolderRecursive(resolvedLocal, targetRoomDir);
+          assembledRooms.push({
+            id: username,
+            title: meta.title,
+            author: meta.author,
+            color: meta.color,
+            description: meta.description || '',
+            path: `rooms/${username}/index.html`
+          });
+          logSuccess(`Imported room: "${meta.title}" by ${meta.author}`);
+          continue;
+        }
+        repoRootPath = resolvedLocal;
+        log(`  📁 Reading local source: ${repoRootPath}`);
       } else {
         // Clone into temporary folder using shallow git clone
         const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), `defrag-${username}-`));
@@ -234,30 +255,46 @@ async function run() {
           throw new Error(`Failed to clone repository: ${cloneErr.message}`);
         }
 
-        distPath = path.join(tempDir, 'room', 'dist');
+        repoRootPath = tempDir;
       }
 
-      // Validate dist contents and room.json
-      const meta = validateAndReadRoom(distPath, username);
-
-      // Copy into rooms/<username>/
-      const targetRoomDir = path.join(ROOMS_DIR, username);
-      if (fs.existsSync(targetRoomDir)) {
-        fs.rmSync(targetRoomDir, { recursive: true, force: true });
+      // Discover rooms (room-1 through room-5, plus room for backward compatibility)
+      const foundRooms = [];
+      for (const cand of ROOM_CANDIDATES) {
+        const candDist = path.join(repoRootPath, cand, 'dist');
+        if (fs.existsSync(path.join(candDist, 'index.html')) && fs.existsSync(path.join(candDist, 'room.json'))) {
+          foundRooms.push({ folderName: cand, distPath: candDist });
+        }
       }
 
-      copyFolderRecursive(distPath, targetRoomDir);
+      if (foundRooms.length === 0) {
+        throw new Error(`No valid room build (index.html + room.json) found in room-1/dist/ through room-5/dist/ for ${username}`);
+      }
 
-      assembledRooms.push({
-        id: username,
-        title: meta.title,
-        author: meta.author,
-        color: meta.color,
-        description: meta.description || '',
-        path: `rooms/${username}/index.html`
-      });
+      for (const roomItem of foundRooms) {
+        const meta = validateAndReadRoom(roomItem.distPath, username, roomItem.folderName);
+        const roomId = (foundRooms.length === 1 && (roomItem.folderName === 'room-1' || roomItem.folderName === 'room'))
+          ? username
+          : `${username}-${roomItem.folderName}`;
 
-      logSuccess(`Imported room: "${meta.title}" by ${meta.author}`);
+        const targetRoomDir = path.join(ROOMS_DIR, roomId);
+        if (fs.existsSync(targetRoomDir)) {
+          fs.rmSync(targetRoomDir, { recursive: true, force: true });
+        }
+
+        copyFolderRecursive(roomItem.distPath, targetRoomDir);
+
+        assembledRooms.push({
+          id: roomId,
+          title: meta.title,
+          author: meta.author,
+          color: meta.color,
+          description: meta.description || '',
+          path: `rooms/${roomId}/index.html`
+        });
+
+        logSuccess(`Imported room (${roomItem.folderName}): "${meta.title}" by ${meta.author}`);
+      }
     } catch (err) {
       logError(`Failed to import room for ${username}: ${err.message}`);
       errors.push({ id: username, error: err.message });

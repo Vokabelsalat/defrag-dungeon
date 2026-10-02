@@ -8,4 +8,4 @@ https://github.com/carol/defrag-dungeon
 https://github.com/dave/defrag-dungeon
 
 # Note: You can also test local folders during development using:
-# local:alice:./room/dist
+# local:alice:./room-1/dist

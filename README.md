@@ -2,13 +2,13 @@
 
 A collaborative, modular browser game built for a **casual 1-hour "vibe-coding" workshop** with 5–10 people.
 
-In Defrag Dungeon, every participant forks the repository and independently creates one browser-based minigame, puzzle, or interactive chamber. At the end of the hour, an assembler gathers all finished rooms from everyone's forks and compiles them into a single, seamless **top-down sequential overworld**.
+In Defrag Dungeon, every participant forks the repository and can independently create up to 5 browser-based minigames, puzzles, or interactive chambers (in `room-1/` through `room-5/`). At the end of the hour, an assembler gathers all finished rooms from everyone's forks and compiles them into a single, seamless **top-down sequential overworld**.
 
 ```text
-[Participant Forks]              [Assembly Tool]               [Overworld Game]
-Alice's Fork: room/dist/  --->\
-Bob's Fork:   room/dist/  ----->  npm run assemble  --->  rooms/ & rooms.json
-Carol's Fork: room/dist/  --->/                           Sequential B&W Dungeon
+[Participant Forks]                  [Assembly Tool]               [Overworld Game]
+Alice's Fork: room-1/dist/, room-2/dist/ ->\
+Bob's Fork:   room-1/dist/ -------------->  npm run assemble  --->  rooms/ & rooms.json
+Carol's Fork: room-1/dist/ ------------->/                           Sequential B&W Dungeon
 ```
 
 ---
@@ -42,22 +42,24 @@ Visit **`http://localhost:3000`** in your browser. You will see the barebones Ov
 
 ---
 
-## 🛠️ Building Your Room
+## 🛠️ Building Your Rooms
 
-Participants and their AI coding assistants work **exclusively inside the `room/` directory**.
+Participants and their AI coding assistants work inside the room directories (`room-1/`, `room-2/`, `room-3/`, `room-4/`, `room-5/`). You can make up to 5 rooms!
 
-### The Rule: Build into `room/dist/`
-Whatever tech stack, libraries, or scripts you use inside `room/`, your final playable game must reside in:
+### The Rule: Build into `room-X/dist/`
+Whatever tech stack, libraries, or scripts you use inside a room directory (`room-1/`, `room-2/`, etc.), your final playable game for that room must reside in:
 
 ```text
-room/
+room-1/
 └── dist/
     ├── index.html        <-- Main entry point
     ├── room.json         <-- Metadata file (title, author, color)
     └── ...               <-- Any JS, CSS, images, audio, or models
 ```
 
-### Required Metadata: `room/dist/room.json`
+By default, `room-1/` comes pre-populated with a starter room template, while `room-2/` through `room-5/` are empty ready for additional rooms.
+
+### Required Metadata: `room-X/dist/room.json`
 Every room must provide `room.json` with at least:
 
 ```json
@@ -111,9 +113,9 @@ See full details in [PROTOCOL.md](./PROTOCOL.md). In short:
 If you are using **Cursor, Claude, Copilot, ChatGPT, or Antigravity**, point your assistant to [AGENTS.md](./AGENTS.md).
 
 It contains strict boundary rules:
-- Work **only** within `room/`.
-- Never modify overworld or project files outside `room/`.
-- Produce the final static build in `room/dist/`.
+- Work **only** within `room-1/`, `room-2/`, `room-3/`, `room-4/`, or `room-5/`.
+- Never modify overworld or project files outside these room directories.
+- Produce the final static builds in `room-X/dist/`.
 - Wait for `{ type: 'defrag:start' }` before beginning gameplay.
 - Make the minigame beatable within 100 seconds.
 

@@ -1,20 +1,20 @@
-# 🛠️ Welcome to Your Room Workspace (`room/`)
+# 🛠️ Welcome to Your Room Workspace (`room-1/`)
 
-This directory is your isolated workshop! You and your AI coding assistant will build your browser minigame or puzzle here.
+This directory is your isolated workshop! You and your AI coding assistant will build your browser minigame or puzzle here. You can build up to 5 rooms by adding projects to `room-1/`, `room-2/`, `room-3/`, `room-4/`, and `room-5/`.
 
 ---
 
 ## 🎯 The Goal
 
 Build a minigame that can be played in **under 100 seconds**.
-When finished, it must be saved into **`room/dist/`**.
+When finished, it must be saved into **`room-1/dist/`** (or `room-2/dist/`, etc.).
 
 ---
 
 ## 📁 Required Directory Layout
 
 ```text
-room/
+room-1/
 └── dist/
     ├── index.html        <-- Main entry point
     ├── room.json         <-- Metadata (title, author, color)
@@ -23,7 +23,7 @@ room/
     └── ...               <-- Any assets
 ```
 
-### Required `room/dist/room.json`
+### Required `room-1/dist/room.json`
 
 ```json
 {

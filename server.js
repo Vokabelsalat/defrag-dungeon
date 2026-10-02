@@ -112,6 +112,6 @@ server.listen(PORT, () => {
   console.log(`\n==============================================`);
   console.log(`  👾 DEFRAG DUNGEON LOCAL SERVER RUNNING`);
   console.log(`  🔗 Overworld URL: http://localhost:${PORT}`);
-  console.log(`  🎮 Test Room:    http://localhost:${PORT}/room/dist/`);
+  console.log(`  🎮 Test Room:    http://localhost:${PORT}/room-1/dist/`);
   console.log(`==============================================\n`);
 });

@@ -88,7 +88,7 @@ class BarebonesOverworld {
           title: 'Sector 07: Memory Matrix',
           author: 'Ada Lovelace',
           color: '#e11d48',
-          path: 'room/dist/index.html'
+          path: 'room-1/dist/index.html'
         }
       ];
     }
