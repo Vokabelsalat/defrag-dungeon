@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CDN Task Force</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main id="game">
+    <header>
+      <h1>CDN Task Force</h1>
+      <div id="phase">Awaiting briefing</div>
+    </header>
+
+    <section id="waiting" class="screen visible">
+      <div class="brief-mark">3<span>vs</span>3</div>
+      <div>
+        <h2>Assemble. Assess. Act.</h2>
+        <p>Choose three CDN researchers, then outthink a rival team in a rapid tactical showdown.</p>
+        <p class="signal">Waiting for mission control…</p>
+      </div>
+    </section>
+
+    <section id="draft" class="screen">
+      <div class="section-head">
+        <div><h2>Choose your task force</h2><p>Pick 3 of the 5 candidates before the briefing closes.</p></div>
+        <div class="draft-timer"><span id="draftTime">9</span>s</div>
+      </div>
+      <div id="candidates" class="candidates"></div>
+      <button id="deploy" disabled>Deploy team <span id="pickCount">0/3</span></button>
+    </section>
+
+    <section id="battle" class="screen">
+      <div class="battle-head">
+        <div class="morale"><span>Your resolve</span><div><i id="allyBar"></i></div><b id="allyHp">100</b></div>
+        <div class="turn" id="turn">Turn 1 / 6</div>
+        <div class="morale enemy"><span>Rival resolve</span><div><i id="enemyBar"></i></div><b id="enemyHp">100</b></div>
+      </div>
+      <div class="arena">
+        <div class="cloud cloud-one"></div><div class="cloud cloud-two"></div>
+        <div class="team-flag ally-flag">Your team</div>
+        <div id="allies" class="squad"></div>
+        <div class="versus"><span>vs</span></div>
+        <div id="enemies" class="squad enemies"></div>
+        <div class="team-flag enemy-flag">Rivals</div>
+      </div>
+      <div class="console">
+        <p id="log">The inward operative acts first. Choose an approach.</p>
+        <div id="actions" class="actions">
+          <button data-skill="analysis">Analyze <small>beats Story</small></button>
+          <button data-skill="systems">Disrupt <small>beats Analysis</small></button>
+          <button data-skill="story">Rally <small>beats Systems</small></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="result" class="screen result">
+      <div id="resultSeal" class="result-seal">✓</div>
+      <h2 id="resultTitle">Mission complete</h2>
+      <p id="resultText"></p>
+    </section>
+  </main>
+  <script src="./game.js"></script>
+</body>
+</html>

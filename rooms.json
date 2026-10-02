@@ -14,5 +14,12 @@
     "color": "#ffffff",
     "path": "room-1/dist/index.html",
     "description": "Spot Andreas in four frantic black-and-white crowd scenes before he disappears."
+  },
+  {
+    "title": "CDN Task Force",
+    "author": "Jakob Kusnick",
+    "color": "#dd5d33",
+    "path": "room-3/dist/index.html",
+    "description": "Draft three CDN researchers and outthink a rival squad in a rapid tactical showdown."
   }
 ]
