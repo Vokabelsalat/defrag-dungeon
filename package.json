@@ -1,0 +1,20 @@
+{
+  "name": "defrag-dungeon",
+  "version": "1.0.0",
+  "description": "A cooperative vibe-coding game where participants build minigames assembled into a sequential 2D overworld.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "assemble": "node assemble.mjs"
+  },
+  "keywords": [
+    "minigame",
+    "workshop",
+    "game-jam",
+    "vibe-coding",
+    "dungeon-crawler"
+  ],
+  "author": "Defrag Dungeon Team",
+  "license": "MIT"
+}

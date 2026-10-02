@@ -1,0 +1,18 @@
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Facilitator runtime lists (optional to ignore forks.txt)
+forks.txt
+
+# Assembled rooms (uncomment if facilitator prefers not to commit assembled builds)
+# rooms/

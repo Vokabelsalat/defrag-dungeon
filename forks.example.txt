@@ -1,0 +1,11 @@
+# List of participant GitHub repository forks for Defrag Dungeon
+# Lines starting with # or blank lines will be ignored.
+# One fork URL per line:
+
+https://github.com/alice/defrag-dungeon
+https://github.com/bob/defrag-dungeon
+https://github.com/carol/defrag-dungeon
+https://github.com/dave/defrag-dungeon
+
+# Note: You can also test local folders during development using:
+# local:alice:./room/dist

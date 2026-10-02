@@ -1,0 +1,9 @@
+[
+  {
+    "id": "starter-room",
+    "title": "Sector 07: Memory Matrix",
+    "author": "Ada Lovelace",
+    "path": "room/dist/index.html",
+    "description": "Defragment the corrupted memory cluster by linking data blocks in correct numerical sequence!"
+  }
+]
