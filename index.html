@@ -3,115 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Defrag Dungeon // Collaborative Minigame Crawler</title>
-  <link rel="icon" type="image/svg+xml" href="./overworld/favicon.svg">
+  <title>Defrag Dungeon</title>
   <link rel="stylesheet" href="./overworld/style.css">
 </head>
 <body>
 
-  <!-- Top Navigation & Global HUD -->
-  <header class="top-nav">
-    <div class="brand">
-      <div class="brand-icon">
-        <span></span><span></span><span></span><span></span>
-      </div>
-      <div class="brand-text">
-        <h1>Defrag Dungeon</h1>
-        <p>Vibe-Coding Collaborative Arcade</p>
-      </div>
-    </div>
-
-    <div class="run-stats">
-      <div class="stat-pill sectors">
-        <span class="dot"></span>
-        <span>SECTOR: <strong id="sectors-count">1/1</strong></span>
-      </div>
-      <div class="stat-pill cleared">
-        <span class="dot"></span>
-        <span>CLEARED: <strong id="cleared-count">0</strong></span>
-      </div>
-      <div class="stat-pill failed">
-        <span class="dot"></span>
-        <span>FAILED: <strong id="failed-count">0</strong></span>
-      </div>
-    </div>
-
-    <div class="nav-actions">
-      <button class="btn-secondary" id="audio-toggle-btn" title="Toggle Sound">🔊 Audio ON</button>
-      <button class="btn-secondary" id="reset-run-btn" title="Restart Dungeon Run">↺ Reset Run</button>
+  <!-- Barebones Header -->
+  <header>
+    <h1>Defrag Dungeon</h1>
+    <div class="header-controls">
+      <span id="progress-indicator">Room 1 of 1</span>
+      <button id="reset-btn">Reset</button>
     </div>
   </header>
 
-  <!-- Main Overworld Sequential Board Track -->
-  <main class="main-content">
-    <div class="map-header">
-      <h2>Sequential Sector Grid</h2>
-      <p>Restore the corrupted system sector by sector. Each room is an isolated chamber built by a participant. Complete them in order!</p>
-    </div>
-
-    <!-- Sequential Room Track -->
-    <div class="track-container" id="track-container">
-      <!-- Generated dynamically by app.js -->
-    </div>
-
-    <!-- Dungeon Cleared Celebration Modal -->
-    <div class="complete-modal" id="complete-modal">
-      <div style="font-size: 3rem;">🎉👾🏆</div>
-      <h2 class="complete-title">SYSTEM FULLY DEFRAGMENTED!</h2>
-      <p style="color: var(--text-secondary); max-width: 500px;">
-        All rooms in this dungeon have been completed. Fantastic work by every participant!
-      </p>
-
-      <div class="complete-stats-row">
-        <div class="complete-stat-box">
-          <span class="complete-stat-num" id="summary-cleared-count" style="color: var(--accent-green);">0</span>
-          <span class="complete-stat-lbl">Sectors Cleared</span>
-        </div>
-        <div class="complete-stat-box">
-          <span class="complete-stat-num" id="summary-failed-count" style="color: var(--accent-red);">0</span>
-          <span class="complete-stat-lbl">Sectors Failed</span>
-        </div>
-      </div>
-
-      <button class="enter-btn" id="replay-btn" style="background: var(--accent-yellow); color: #000;">
-        <span>↻</span> Replay Entire Dungeon
-      </button>
-    </div>
+  <!-- Sequential Room List -->
+  <main id="room-list">
+    <!-- Generated dynamically -->
   </main>
 
-  <!-- Fullscreen / Near-Fullscreen Room Iframe Overlay Modal -->
-  <div class="room-overlay" id="room-overlay">
-    <!-- Arcade Bezel Top Bar -->
-    <div class="arcade-hud">
-      <div class="hud-room-info">
-        <span class="hud-sector-num" id="hud-sector-num">SECTOR 01</span>
-        <h2 class="hud-title" id="hud-title">Sector Name</h2>
+  <!-- Completion Summary -->
+  <div id="dungeon-summary" class="dungeon-summary">
+    <h2>All Rooms Completed</h2>
+    <p id="summary-text" style="margin: 10px 0;"></p>
+    <button id="replay-btn">Replay</button>
+  </div>
+
+  <!-- Room Modal Overlay -->
+  <div id="room-overlay" class="room-overlay">
+    <div class="overlay-header">
+      <div class="overlay-room-meta">
+        <div id="overlay-color-indicator" class="overlay-color-indicator"></div>
+        <span id="overlay-title" class="overlay-title">Room Title</span>
       </div>
 
-      <!-- Center Countdown Timer -->
-      <div class="hud-timer-container">
-        <div class="hud-timer-badge">
-          <span class="timer-label">TIME</span>
-          <span class="timer-display" id="hud-timer-display">60.0s</span>
-        </div>
-        <div class="grace-pill" id="grace-pill">⚠️ GRACE: 5.0s</div>
+      <div class="overlay-center">
+        <div id="overlay-timer" class="overlay-timer">100.0s</div>
+        <div id="grace-indicator" class="grace-indicator">Grace: 5.0s</div>
       </div>
 
-      <!-- Right Controls -->
-      <div class="hud-actions">
-        <button class="btn-abandon" id="btn-abandon">✕ Abandon Sector</button>
+      <div class="overlay-controls">
+        <button id="start-btn" class="start-btn">Start Room</button>
+        <button id="exit-btn">Exit</button>
       </div>
     </div>
 
-    <!-- Room Iframe Container -->
-    <div class="iframe-wrapper" id="iframe-wrapper">
-      <!-- Active <iframe> mounted here dynamically -->
-    </div>
+    <div class="iframe-container" id="iframe-container">
+      <iframe id="room-iframe" class="room-iframe" allow="autoplay; fullscreen"></iframe>
 
-    <!-- Sector Result Verdict Overlay -->
-    <div class="hud-verdict-overlay" id="hud-verdict-overlay">
-      <h2 class="verdict-banner" id="verdict-banner">★ SECTOR CLEARED ★</h2>
-      <p class="verdict-desc" id="verdict-desc">Results summary</p>
+      <div id="result-banner" class="result-banner">
+        <div id="result-title" class="result-title">Room Complete</div>
+        <div id="result-text">Result text</div>
+      </div>
     </div>
   </div>
 

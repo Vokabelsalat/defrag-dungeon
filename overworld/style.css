@@ -1,23 +1,4 @@
-:root {
-  --bg-color: #0b0f19;
-  --bg-canvas: #0e1424;
-  --surface: #151d32;
-  --surface-alt: #1c2742;
-  --border-color: #2b395b;
-  --accent-cyan: #00f0ff;
-  --accent-yellow: #ffe600;
-  --accent-magenta: #ff007f;
-  --accent-green: #00ff66;
-  --accent-red: #ff3355;
-  --accent-purple: #8b5cf6;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --card-radius: 16px;
-  --shadow-offset: 6px;
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
+/* Barebones Black & White Overworld Styles */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -25,538 +6,148 @@
 }
 
 body {
-  background-color: var(--bg-color);
-  color: var(--text-primary);
-  font-family: var(--font-family);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
+  background: #ffffff;
+  color: #000000;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+  padding: 20px;
 }
 
-/* Header & HUD */
-.top-nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(15, 22, 38, 0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 3px solid #000;
-  padding: 0.85rem 2rem;
+/* Header */
+header {
+  max-width: 700px;
+  margin: 0 auto 30px auto;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #000000;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  align-items: center;
 }
 
-.brand {
+h1 {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.header-controls {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
-.brand-icon {
-  width: 40px;
-  height: 40px;
-  background: #000;
-  border: 2px solid var(--accent-cyan);
-  border-radius: 10px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 5px;
-  gap: 4px;
-  box-shadow: 3px 3px 0px var(--accent-cyan);
-}
-
-.brand-icon span {
-  border-radius: 2px;
-}
-.brand-icon span:nth-child(1) { background: var(--accent-cyan); }
-.brand-icon span:nth-child(2) { background: var(--accent-yellow); }
-.brand-icon span:nth-child(3) { background: var(--accent-green); }
-.brand-icon span:nth-child(4) { background: var(--accent-magenta); }
-
-.brand-text h1 {
-  font-size: 1.35rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  color: #fff;
-  line-height: 1;
-}
-
-.brand-text p {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--accent-cyan);
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-
-.run-stats {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #090d16;
-  border: 2px solid var(--border-color);
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  box-shadow: 2px 2px 0px #000;
-}
-
-.stat-pill .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-.stat-pill.cleared .dot { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
-.stat-pill.failed .dot { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
-.stat-pill.sectors .dot { background: var(--accent-cyan); box-shadow: 0 0 6px var(--accent-cyan); }
-
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.btn-secondary {
-  background: var(--surface-alt);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
+button {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
+  padding: 6px 12px;
+  font-size: 14px;
   cursor: pointer;
-  box-shadow: 3px 3px 0px #000;
-  transition: all 0.15s ease;
+  font-family: inherit;
 }
 
-.btn-secondary:hover {
-  border-color: var(--accent-yellow);
-  transform: translateY(-2px);
-  box-shadow: 4px 4px 0px #000;
+button:hover:not(:disabled) {
+  background: #000000;
+  color: #ffffff;
 }
 
-.btn-secondary:active {
-  transform: translateY(1px);
-  box-shadow: 1px 1px 0px #000;
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-/* Main Map Area */
-.main-content {
-  flex: 1;
-  max-width: 960px;
-  width: 100%;
+/* Main Room List */
+main {
+  max-width: 700px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 5rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 15px;
 }
 
-.map-header {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.map-header h2 {
-  font-size: 2rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.map-header p {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-  max-width: 580px;
-}
-
-/* Overworld Sequential Path / Board Track */
-.track-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  margin-top: 1rem;
-}
-
-/* Connecting Bus Cable Line */
-.track-bus-line {
-  position: absolute;
-  top: 40px;
-  bottom: 40px;
-  width: 8px;
-  background: #192338;
-  border-left: 2px solid #000;
-  border-right: 2px solid #000;
-  z-index: 1;
-}
-
-/* Sequential Room Node Wrapper */
-.room-node {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 620px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 2.5rem;
-}
-
-/* Connecting Connector Cable Between Nodes */
-.room-connector {
-  position: relative;
-  height: 48px;
-  width: 12px;
-  background: #1c2742;
-  border: 2px solid #000;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.room-connector::before {
-  content: '▼';
-  font-size: 9px;
-  color: var(--accent-cyan);
-  opacity: 0.8;
-}
-
-.room-node.cleared + .room-connector,
-.room-node.failed + .room-connector {
-  background: var(--accent-cyan);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-}
-
-/* Room Card (Bold graphic design) */
 .room-card {
-  width: 100%;
-  background: var(--surface);
-  border: 3px solid var(--border-color);
-  border-radius: var(--card-radius);
-  box-shadow: 6px 6px 0px #000;
-  padding: 1.5rem;
+  border: 1px solid #000000;
+  padding: 16px;
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
-  overflow: hidden;
+  align-items: center;
+  gap: 16px;
+  background: #ffffff;
 }
 
-/* Left Accent Strip */
-.room-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 8px;
-  background: var(--border-color);
-  transition: background 0.2s ease;
-}
-
-/* Card States */
 .room-card.state-locked {
-  opacity: 0.55;
-  filter: grayscale(0.6);
+  opacity: 0.4;
   border-style: dashed;
 }
 
-.room-card.state-active {
-  border-color: var(--accent-cyan);
-  box-shadow: 8px 8px 0px #000, 0 0 25px rgba(0, 240, 255, 0.25);
-  transform: translateY(-2px);
-}
-.room-card.state-active::before {
-  background: var(--accent-cyan);
+.room-card.state-ready {
+  border: 2px solid #000000;
 }
 
-.room-card.state-cleared {
-  border-color: var(--accent-green);
-  box-shadow: 6px 6px 0px #000;
-}
-.room-card.state-cleared::before {
-  background: var(--accent-green);
-}
-
-.room-card.state-failed {
-  border-color: var(--accent-red);
-  box-shadow: 6px 6px 0px #000;
-}
-.room-card.state-failed::before {
-  background: var(--accent-red);
+/* The Color Box for Each Room (from room.json) */
+.room-color-box {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border: 1px solid #000000;
 }
 
-/* Card Header */
-.card-top {
+.room-info {
+  flex: 1;
+}
+
+.room-header-line {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.card-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.sector-tag {
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent-cyan);
+  align-items: baseline;
+  gap: 8px;
 }
 
 .room-title {
-  font-size: 1.4rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #fff;
-  line-height: 1.2;
+  font-size: 18px;
+  font-weight: bold;
 }
 
-.author-tag {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-.author-tag strong {
-  color: var(--accent-yellow);
+.room-author {
+  font-size: 14px;
+  color: #444444;
 }
 
-.status-badge {
-  font-size: 0.75rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+.room-status {
+  font-size: 12px;
+  font-weight: bold;
   text-transform: uppercase;
-  padding: 0.35rem 0.75rem;
-  border-radius: 8px;
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0px #000;
-  white-space: nowrap;
+  margin-top: 4px;
 }
 
-.status-badge.badge-locked {
-  background: #2b395b;
-  color: var(--text-muted);
-}
-.status-badge.badge-ready {
-  background: var(--accent-cyan);
-  color: #000;
-  animation: pulseReady 2s infinite ease-in-out;
-}
-.status-badge.badge-cleared {
-  background: var(--accent-green);
-  color: #000;
-}
-.status-badge.badge-failed {
-  background: var(--accent-red);
-  color: #fff;
+.room-result {
+  font-size: 13px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: 1px solid #000000;
+  display: inline-block;
 }
 
-@keyframes pulseReady {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-.room-description {
-  font-size: 0.85rem;
-  line-height: 1.45;
-  color: var(--text-secondary);
-}
-
-/* Result Box on Completed Room */
-.room-result-box {
-  background: #0d1322;
-  border: 2px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.room-result-box.cleared {
-  border-color: rgba(0, 255, 102, 0.4);
-  background: rgba(0, 255, 102, 0.05);
-}
-
-.room-result-box.failed {
-  border-color: rgba(255, 51, 85, 0.4);
-  background: rgba(255, 51, 85, 0.05);
-}
-
-.result-icon {
-  font-size: 1.2rem;
-}
-
-.result-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.result-label {
-  font-size: 0.65rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
-.result-text {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-/* Card Action Button */
-.card-bottom {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.25rem;
+.room-actions {
+  flex-shrink: 0;
 }
 
 .enter-btn {
-  background: var(--accent-cyan);
-  color: #000;
-  border: 2px solid #000;
-  border-radius: 10px;
-  padding: 0.65rem 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 4px 4px 0px #000;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.15s ease;
+  font-weight: bold;
+  padding: 8px 16px;
 }
 
-.enter-btn:hover {
-  background: #33f3ff;
-  transform: translateY(-2px);
-  box-shadow: 6px 6px 0px #000;
-}
-
-.enter-btn:active {
-  transform: translateY(2px);
-  box-shadow: 2px 2px 0px #000;
-}
-
-/* Player Runner Pawn */
-.player-token {
-  position: absolute;
-  left: -22px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  background: var(--accent-yellow);
-  border: 3px solid #000;
-  border-radius: 50%;
-  box-shadow: 4px 4px 0px #000, 0 0 15px rgba(255, 230, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  z-index: 10;
-  animation: bounceToken 1.5s infinite ease-in-out;
-}
-
-@keyframes bounceToken {
-  0%, 100% { transform: translateY(-50%) scale(1); }
-  50% { transform: translateY(-50%) scale(1.1); }
-}
-
-/* Dungeon Complete Modal / Banner */
-.complete-modal {
+/* Completion summary */
+.dungeon-summary {
   display: none;
-  background: var(--surface);
-  border: 3px solid var(--accent-green);
-  border-radius: 20px;
-  box-shadow: 8px 8px 0px #000, 0 0 40px rgba(0, 255, 102, 0.3);
-  padding: 2.5rem;
+  border: 2px solid #000000;
+  padding: 20px;
+  margin-top: 20px;
   text-align: center;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  margin-top: 1rem;
 }
 
-.complete-modal.active {
-  display: flex;
-  animation: popIn 0.3s ease;
+.dungeon-summary.active {
+  display: block;
 }
 
-.complete-title {
-  font-size: 2.2rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--accent-green);
-}
-
-.complete-stats-row {
-  display: flex;
-  gap: 2rem;
-  margin: 1rem 0;
-}
-
-.complete-stat-box {
-  background: #090d16;
-  border: 2px solid var(--border-color);
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 3px 3px 0px #000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.complete-stat-num {
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: #fff;
-}
-
-.complete-stat-lbl {
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-/* ================================================================ */
-/* FULL-SCREEN IFRAME OVERLAY MODAL                                 */
-/* ================================================================ */
+/* Fullscreen / Near-Fullscreen Room Overlay */
 .room-overlay {
   display: none;
   position: fixed;
@@ -564,7 +155,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #000;
+  background: #ffffff;
   z-index: 1000;
   flex-direction: column;
 }
@@ -573,146 +164,87 @@ body {
   display: flex;
 }
 
-/* Top Arcade HUD */
-.arcade-hud {
-  height: 64px;
-  background: #0d1220;
-  border-bottom: 3px solid #000;
+.overlay-header {
+  height: 54px;
+  border-bottom: 2px solid #000000;
+  padding: 0 20px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
-  gap: 1rem;
-  z-index: 10;
+  align-items: center;
+  background: #ffffff;
+  flex-shrink: 0;
 }
 
-.hud-room-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.hud-sector-num {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent-cyan);
-}
-
-.hud-title {
-  font-size: 1.1rem;
-  font-weight: 900;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 320px;
-}
-
-/* Central Timer */
-.hud-timer-container {
+.overlay-room-meta {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
 }
 
-.hud-timer-badge {
-  background: #141b2d;
-  border: 2px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.35rem 1rem;
+.overlay-color-indicator {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #000000;
+}
+
+.overlay-title {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.overlay-center {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: 2px 2px 0px #000;
+  gap: 16px;
 }
 
-.timer-label {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--text-muted);
-  text-transform: uppercase;
+.overlay-timer {
+  font-size: 20px;
+  font-weight: bold;
+  font-family: monospace;
+  min-width: 80px;
+  text-align: center;
 }
 
-.timer-display {
-  font-size: 1.35rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-cyan);
-  min-width: 65px;
-  text-align: right;
+.overlay-timer.warning {
+  text-decoration: underline;
 }
 
-.timer-display.warning {
-  color: var(--accent-yellow);
-}
-
-.timer-display.danger {
-  color: var(--accent-red);
-  animation: blink 0.5s infinite alternate;
-}
-
-@keyframes blink {
-  from { opacity: 1; }
-  to { opacity: 0.3; }
-}
-
-/* Grace Period Warning in HUD */
-.grace-pill {
+.grace-indicator {
   display: none;
-  background: var(--accent-red);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0px #000;
-  animation: pulseGrace 0.5s infinite alternate;
+  font-size: 13px;
+  font-weight: bold;
+  border: 1px solid #000000;
+  padding: 2px 6px;
 }
 
-.grace-pill.active {
-  display: block;
+.grace-indicator.active {
+  display: inline-block;
 }
 
-@keyframes pulseGrace {
-  from { transform: scale(1); }
-  to { transform: scale(1.06); }
-}
-
-.hud-actions {
+.overlay-controls {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
-.btn-abandon {
-  background: transparent;
-  color: var(--accent-red);
-  border: 2px solid var(--accent-red);
-  border-radius: 8px;
-  padding: 0.4rem 0.85rem;
-  font-size: 0.75rem;
-  font-weight: 800;
-  cursor: pointer;
-  text-transform: uppercase;
-  box-shadow: 2px 2px 0px #000;
-  transition: all 0.15s ease;
+.start-btn {
+  font-weight: bold;
+  background: #000000;
+  color: #ffffff;
 }
 
-.btn-abandon:hover {
-  background: var(--accent-red);
-  color: #fff;
+.start-btn:hover:not(:disabled) {
+  background: #333333;
 }
 
-/* The Iframe Container */
-.iframe-wrapper {
+/* Iframe Container & 0.2 Opacity Preview */
+.iframe-container {
   flex: 1;
   position: relative;
-  background: #000;
+  background: #ffffff;
   width: 100%;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 54px);
 }
 
 .room-iframe {
@@ -720,79 +252,37 @@ body {
   height: 100%;
   border: none;
   display: block;
+  opacity: 0.2;
+  pointer-events: none;
 }
 
-/* Loading & Verdict Overlay inside Modal */
-.hud-verdict-overlay {
+.room-iframe.started {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Simple result message overlay */
+.result-banner {
   display: none;
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(11, 15, 25, 0.94);
-  backdrop-filter: blur(8px);
-  z-index: 100;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #ffffff;
+  border: 2px solid #000000;
+  padding: 24px;
   text-align: center;
-  padding: 2rem;
+  z-index: 10;
+  max-width: 450px;
+  width: 90%;
 }
 
-.hud-verdict-overlay.active {
-  display: flex;
-  animation: popIn 0.25s ease;
+.result-banner.active {
+  display: block;
 }
 
-.verdict-banner {
-  font-size: 2.8rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-}
-
-.verdict-banner.cleared {
-  color: var(--accent-green);
-  text-shadow: 0 0 30px rgba(0, 255, 102, 0.6);
-}
-
-.verdict-banner.failed {
-  color: var(--accent-red);
-  text-shadow: 0 0 30px rgba(255, 51, 85, 0.6);
-}
-
-.verdict-desc {
-  font-size: 1.1rem;
-  color: var(--text-primary);
-  max-width: 480px;
-}
-
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@media (max-width: 768px) {
-  .top-nav {
-    padding: 0.75rem 1rem;
-  }
-  .run-stats {
-    gap: 0.5rem;
-  }
-  .stat-pill {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-  }
-  .hud-title {
-    max-width: 180px;
-    font-size: 0.95rem;
-  }
-  .player-token {
-    left: -12px;
-    width: 34px;
-    height: 34px;
-    font-size: 0.9rem;
-  }
+.result-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
 }

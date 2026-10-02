@@ -145,6 +145,10 @@ function validateAndReadRoom(distDir, username) {
     throw new Error(`'room.json' must specify a non-empty "author" string`);
   }
 
+  if (!metadata.color || typeof metadata.color !== 'string' || !metadata.color.trim()) {
+    metadata.color = '#3b82f6';
+  }
+
   return metadata;
 }
 
@@ -248,6 +252,7 @@ async function run() {
         id: username,
         title: meta.title,
         author: meta.author,
+        color: meta.color,
         description: meta.description || '',
         path: `rooms/${username}/index.html`
       });

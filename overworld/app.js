@@ -1,111 +1,49 @@
-// Defrag Dungeon Overworld Host Controller
+// Barebones Defrag Dungeon Overworld Host
 
-class OverworldAudio {
+class BarebonesOverworld {
   constructor() {
-    this.ctx = null;
-    this.enabled = true;
-  }
-
-  init() {
-    if (!this.ctx) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (AudioContext) {
-        this.ctx = new AudioContext();
-      }
-    }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-  }
-
-  playTone(freq, duration = 0.1, type = 'sine', gainVal = 0.12) {
-    if (!this.enabled) return;
-    this.init();
-    if (!this.ctx) return;
-    try {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + duration);
-    } catch (e) {
-      console.warn('Audio err:', e);
-    }
-  }
-
-  playCleared() {
-    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
-      setTimeout(() => this.playTone(freq, 0.18, 'triangle', 0.15), idx * 100);
-    });
-  }
-
-  playFailed() {
-    [320, 240, 180].forEach((freq, idx) => {
-      setTimeout(() => this.playTone(freq, 0.22, 'sawtooth', 0.12), idx * 120);
-    });
-  }
-
-  playEnter() {
-    this.playTone(440, 0.08, 'sine', 0.1);
-    setTimeout(() => this.playTone(880, 0.12, 'sine', 0.1), 80);
-  }
-}
-
-class DefragOverworld {
-  constructor() {
-    this.audio = new OverworldAudio();
     this.rooms = [];
     this.currentIndex = 0;
     this.currentRoom = null;
     this.roomStates = {}; // roomId -> { state: 'locked'|'ready'|'cleared'|'failed', result: '' }
 
-    // Timing
-    this.TIMER_LIMIT_MS = 60000;
-    this.GRACE_LIMIT_MS = 5000;
+    this.TIMER_LIMIT_MS = 100000; // 100 seconds
+    this.GRACE_LIMIT_MS = 5000;   // 5 seconds grace period
     this.timerStartTime = 0;
     this.timerInterval = null;
     this.graceInterval = null;
-    this.inGracePeriod = false;
+    this.isGameRunning = false;
 
     // DOM Elements
-    this.trackContainer = document.getElementById('track-container');
-    this.clearedCountEl = document.getElementById('cleared-count');
-    this.failedCountEl = document.getElementById('failed-count');
-    this.sectorsCountEl = document.getElementById('sectors-count');
-    this.resetRunBtn = document.getElementById('reset-run-btn');
-    this.audioToggleBtn = document.getElementById('audio-toggle-btn');
-    this.completeModal = document.getElementById('complete-modal');
+    this.roomListEl = document.getElementById('room-list');
+    this.progressIndicator = document.getElementById('progress-indicator');
+    this.resetBtn = document.getElementById('reset-btn');
+    this.dungeonSummary = document.getElementById('dungeon-summary');
+    this.summaryText = document.getElementById('summary-text');
     this.replayBtn = document.getElementById('replay-btn');
 
     // Overlay Elements
     this.overlay = document.getElementById('room-overlay');
-    this.hudSector = document.getElementById('hud-sector-num');
-    this.hudTitle = document.getElementById('hud-title');
-    this.hudTimerDisplay = document.getElementById('hud-timer-display');
-    this.gracePill = document.getElementById('grace-pill');
-    this.btnAbandon = document.getElementById('btn-abandon');
-    this.iframeWrapper = document.getElementById('iframe-wrapper');
-    this.verdictOverlay = document.getElementById('hud-verdict-overlay');
-    this.verdictBanner = document.getElementById('verdict-banner');
-    this.verdictDesc = document.getElementById('verdict-desc');
-
-    this.activeIframe = null;
+    this.overlayColor = document.getElementById('overlay-color-indicator');
+    this.overlayTitle = document.getElementById('overlay-title');
+    this.overlayTimer = document.getElementById('overlay-timer');
+    this.graceIndicator = document.getElementById('grace-indicator');
+    this.startBtn = document.getElementById('start-btn');
+    this.exitBtn = document.getElementById('exit-btn');
+    this.roomIframe = document.getElementById('room-iframe');
+    this.resultBanner = document.getElementById('result-banner');
+    this.resultTitle = document.getElementById('result-title');
+    this.resultText = document.getElementById('result-text');
 
     this.bindEvents();
     this.init();
   }
 
   bindEvents() {
-    // Message listener for room protocol
     window.addEventListener('message', (e) => this.handleProtocolMessage(e));
 
-    this.resetRunBtn.addEventListener('click', () => {
-      if (confirm('Reset your dungeon run back to Sector 1?')) {
+    this.resetBtn.addEventListener('click', () => {
+      if (confirm('Reset dungeon run?')) {
         this.resetRun();
       }
     });
@@ -114,14 +52,15 @@ class DefragOverworld {
       this.replayBtn.addEventListener('click', () => this.resetRun());
     }
 
-    this.audioToggleBtn.addEventListener('click', () => {
-      this.audio.enabled = !this.audio.enabled;
-      this.audioToggleBtn.textContent = this.audio.enabled ? '🔊 Audio ON' : '🔇 Audio OFF';
-    });
+    this.startBtn.addEventListener('click', () => this.startCurrentRoom());
 
-    this.btnAbandon.addEventListener('click', () => {
-      if (confirm('Abandon this sector? It will be marked as FAILED.')) {
-        this.handleRoomFinish(false, 'Sector abandoned by player.');
+    this.exitBtn.addEventListener('click', () => {
+      if (this.isGameRunning) {
+        if (confirm('Exit sector? It will be marked as FAILED.')) {
+          this.handleRoomCompletion(false, 'Exited by player.');
+        }
+      } else {
+        this.closeOverlay();
       }
     });
   }
@@ -129,8 +68,7 @@ class DefragOverworld {
   async init() {
     await this.loadRooms();
     this.loadSavedState();
-    this.renderTrack();
-    this.updateStats();
+    this.renderList();
   }
 
   async loadRooms() {
@@ -139,8 +77,8 @@ class DefragOverworld {
       if (res.ok) {
         this.rooms = await res.json();
       }
-    } catch (e) {
-      console.warn('Failed to fetch rooms.json, using fallback starter room', e);
+    } catch {
+      // Fallback
     }
 
     if (!this.rooms || this.rooms.length === 0) {
@@ -149,13 +87,13 @@ class DefragOverworld {
           id: 'starter-room',
           title: 'Sector 07: Memory Matrix',
           author: 'Ada Lovelace',
-          path: 'room/dist/index.html',
-          description: 'Defragment the corrupted memory cluster by linking data blocks in correct numerical sequence!'
+          color: '#e11d48',
+          path: 'room/dist/index.html'
         }
       ];
     }
 
-    // Try to asynchronously refresh live room.json metadata for each room
+    // Try to refresh live metadata from room.json
     await Promise.all(this.rooms.map(async (room) => {
       try {
         const metadataUrl = room.path.replace(/index\.html$/, 'room.json');
@@ -164,11 +102,9 @@ class DefragOverworld {
           const meta = await metaRes.json();
           if (meta.title) room.title = meta.title;
           if (meta.author) room.author = meta.author;
-          if (meta.description) room.description = meta.description;
+          if (meta.color) room.color = meta.color;
         }
-      } catch {
-        // Fallback to room's existing title/author
-      }
+      } catch {}
     }));
   }
 
@@ -182,7 +118,6 @@ class DefragOverworld {
       this.roomStates = {};
     }
 
-    // Determine current index based on states
     let firstReady = -1;
     for (let i = 0; i < this.rooms.length; i++) {
       const rId = this.rooms[i].id;
@@ -193,57 +128,32 @@ class DefragOverworld {
       }
     }
 
-    if (firstReady === -1) {
-      // All rooms completed
-      this.currentIndex = this.rooms.length;
-    } else {
-      this.currentIndex = firstReady;
-    }
+    this.currentIndex = firstReady === -1 ? this.rooms.length : firstReady;
   }
 
   saveState() {
     try {
       localStorage.setItem('defrag_dungeon_run', JSON.stringify(this.roomStates));
-    } catch (e) {
-      console.warn('Could not save state to localStorage', e);
-    }
+    } catch {}
   }
 
   resetRun() {
     this.roomStates = {};
     this.currentIndex = 0;
     this.saveState();
-    this.renderTrack();
-    this.updateStats();
-    if (this.completeModal) {
-      this.completeModal.classList.remove('active');
+    this.renderList();
+    if (this.dungeonSummary) {
+      this.dungeonSummary.classList.remove('active');
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  updateStats() {
-    let cleared = 0;
-    let failed = 0;
-    this.rooms.forEach((r) => {
-      const state = this.roomStates[r.id]?.state;
-      if (state === 'cleared') cleared++;
-      if (state === 'failed') failed++;
-    });
+  renderList() {
+    this.roomListEl.innerHTML = '';
+    const total = this.rooms.length;
+    const currentNum = Math.min(this.currentIndex + 1, total);
+    this.progressIndicator.textContent = `Room ${currentNum} of ${total}`;
 
-    this.clearedCountEl.textContent = cleared;
-    this.failedCountEl.textContent = failed;
-    this.sectorsCountEl.textContent = `${Math.min(this.currentIndex + 1, this.rooms.length)}/${this.rooms.length}`;
-  }
-
-  renderTrack() {
-    this.trackContainer.innerHTML = '';
-
-    // Track vertical connector line
-    const busLine = document.createElement('div');
-    busLine.className = 'track-bus-line';
-    this.trackContainer.appendChild(busLine);
-
-    this.rooms.forEach((room, index) => {
+    this.rooms.forEach((room, idx) => {
       const saved = this.roomStates[room.id] || {};
       let state = 'locked';
 
@@ -251,169 +161,133 @@ class DefragOverworld {
         state = 'cleared';
       } else if (saved.state === 'failed') {
         state = 'failed';
-      } else if (index === this.currentIndex) {
+      } else if (idx === this.currentIndex) {
         state = 'ready';
       }
 
-      // Create Node wrapper
-      const node = document.createElement('div');
-      node.className = `room-node ${state}`;
-      node.id = `room-node-${index}`;
-
-      // Card Element
       const card = document.createElement('div');
       card.className = `room-card state-${state}`;
 
-      // Player Token if active
-      if (state === 'ready') {
-        const token = document.createElement('div');
-        token.className = 'player-token';
-        token.title = 'Current Location';
-        token.innerHTML = '👾';
-        card.appendChild(token);
+      // Color Box from room.json
+      const colorBox = document.createElement('div');
+      colorBox.className = 'room-color-box';
+      colorBox.style.backgroundColor = room.color || '#3b82f6';
+      card.appendChild(colorBox);
+
+      // Room Info
+      const info = document.createElement('div');
+      info.className = 'room-info';
+
+      const headerLine = document.createElement('div');
+      headerLine.className = 'room-header-line';
+
+      const titleEl = document.createElement('span');
+      titleEl.className = 'room-title';
+      titleEl.textContent = `${idx + 1}. ${room.title}`;
+
+      const authorEl = document.createElement('span');
+      authorEl.className = 'room-author';
+      authorEl.textContent = `by ${room.author}`;
+
+      headerLine.appendChild(titleEl);
+      headerLine.appendChild(authorEl);
+      info.appendChild(headerLine);
+
+      const statusEl = document.createElement('div');
+      statusEl.className = 'room-status';
+      if (state === 'cleared') statusEl.textContent = '[CLEARED]';
+      else if (state === 'failed') statusEl.textContent = '[FAILED]';
+      else if (state === 'ready') statusEl.textContent = '[READY]';
+      else statusEl.textContent = '[LOCKED]';
+      info.appendChild(statusEl);
+
+      if (saved.result) {
+        const resultEl = document.createElement('div');
+        resultEl.className = 'room-result';
+        resultEl.textContent = `Result: ${saved.result}`;
+        info.appendChild(resultEl);
       }
 
-      // Top row
-      const top = document.createElement('div');
-      top.className = 'card-top';
+      card.appendChild(info);
 
-      const titleGroup = document.createElement('div');
-      titleGroup.className = 'card-title-group';
-
-      const sectorNum = String(index + 1).padStart(2, '0');
-      titleGroup.innerHTML = `
-        <span class="sector-tag">Sector ${sectorNum} // ID: ${room.id}</span>
-        <h3 class="room-title">${this.escapeHtml(room.title)}</h3>
-        <span class="author-tag">Built by <strong>${this.escapeHtml(room.author)}</strong></span>
-      `;
-
-      // Status Badge
-      const badge = document.createElement('div');
-      badge.className = `status-badge badge-${state}`;
-      if (state === 'cleared') badge.textContent = '✓ Cleared';
-      else if (state === 'failed') badge.textContent = '✕ Failed';
-      else if (state === 'ready') badge.textContent = '▶ Ready';
-      else badge.textContent = '🔒 Locked';
-
-      top.appendChild(titleGroup);
-      top.appendChild(badge);
-      card.appendChild(top);
-
-      // Description
-      if (room.description) {
-        const desc = document.createElement('p');
-        desc.className = 'room-description';
-        desc.textContent = room.description;
-        card.appendChild(desc);
-      }
-
-      // Completed Result Summary Box
-      if (state === 'cleared' || state === 'failed') {
-        const resBox = document.createElement('div');
-        resBox.className = `room-result-box ${state}`;
-        const icon = state === 'cleared' ? '🏆' : '⚠️';
-        const label = state === 'cleared' ? 'CLEAR LOG' : 'FAILURE LOG';
-        const resultText = saved.result || (state === 'cleared' ? 'Sector cleared successfully.' : 'Sector failed.');
-
-        resBox.innerHTML = `
-          <div class="result-icon">${icon}</div>
-          <div class="result-content">
-            <span class="result-label">${label}</span>
-            <span class="result-text">${this.escapeHtml(resultText)}</span>
-          </div>
-        `;
-        card.appendChild(resBox);
-      }
-
-      // Action Button (Only for Ready room, or replay cleared room)
+      // Action Button
       if (state === 'ready' || state === 'cleared' || state === 'failed') {
-        const bottom = document.createElement('div');
-        bottom.className = 'card-bottom';
+        const actionCol = document.createElement('div');
+        actionCol.className = 'room-actions';
 
         const btn = document.createElement('button');
         btn.className = 'enter-btn';
-        if (state === 'ready') {
-          btn.innerHTML = `<span>▶</span> Enter Sector ${sectorNum}`;
-        } else {
-          btn.innerHTML = `<span>↻</span> Replay Sector`;
-          btn.style.background = '#1c2742';
-          btn.style.color = '#fff';
-        }
+        btn.textContent = state === 'ready' ? 'Enter Room' : 'Replay';
 
         btn.addEventListener('click', () => {
-          this.enterRoom(room, index);
+          this.enterRoom(room, idx);
         });
 
-        bottom.appendChild(btn);
-        card.appendChild(bottom);
+        actionCol.appendChild(btn);
+        card.appendChild(actionCol);
       }
 
-      node.appendChild(card);
-
-      // Connector to next room
-      if (index < this.rooms.length - 1) {
-        const connector = document.createElement('div');
-        connector.className = 'room-connector';
-        node.appendChild(connector);
-      }
-
-      this.trackContainer.appendChild(node);
+      this.roomListEl.appendChild(card);
     });
 
-    // Check if entire dungeon completed
+    // Check complete
     if (this.currentIndex >= this.rooms.length && this.rooms.length > 0) {
-      this.showCompleteCelebration();
+      let cleared = 0;
+      let failed = 0;
+      this.rooms.forEach(r => {
+        const st = this.roomStates[r.id]?.state;
+        if (st === 'cleared') cleared++;
+        if (st === 'failed') failed++;
+      });
+      this.summaryText.textContent = `Cleared: ${cleared} | Failed: ${failed}`;
+      this.dungeonSummary.classList.add('active');
     }
   }
 
-  showCompleteCelebration() {
-    if (!this.completeModal) return;
-    let cleared = 0;
-    let failed = 0;
-    this.rooms.forEach((r) => {
-      const state = this.roomStates[r.id]?.state;
-      if (state === 'cleared') cleared++;
-      if (state === 'failed') failed++;
-    });
+  enterRoom(room, idx) {
+    this.currentRoom = room;
+    this.currentRoomIndex = idx;
+    this.isGameRunning = false;
 
-    const clearedEl = document.getElementById('summary-cleared-count');
-    const failedEl = document.getElementById('summary-failed-count');
-    if (clearedEl) clearedEl.textContent = cleared;
-    if (failedEl) failedEl.textContent = failed;
+    // Set Header Info
+    this.overlayColor.style.backgroundColor = room.color || '#3b82f6';
+    this.overlayTitle.textContent = `${room.title} (by ${room.author})`;
+    this.overlayTimer.textContent = '100.0s';
+    this.overlayTimer.className = 'overlay-timer';
+    this.graceIndicator.classList.remove('active');
+    this.resultBanner.classList.remove('active');
 
-    this.completeModal.classList.add('active');
-    this.audio.playCleared();
-    this.completeModal.scrollIntoView({ behavior: 'smooth' });
+    // Reset Start Button
+    this.startBtn.disabled = false;
+    this.startBtn.textContent = 'Start Room';
+
+    // Mount Iframe at 0.2 opacity and unclickable
+    this.roomIframe.classList.remove('started');
+    this.roomIframe.src = room.path;
+
+    // Show Overlay
+    this.overlay.classList.add('active');
   }
 
-  enterRoom(room, index) {
-    this.currentRoom = room;
-    this.currentRoomIndex = index;
-    this.inGracePeriod = false;
+  startCurrentRoom() {
+    if (this.isGameRunning) return;
+    this.isGameRunning = true;
 
-    this.audio.playEnter();
+    // Activate Iframe: full opacity, clickable
+    this.roomIframe.classList.add('started');
 
-    // Populate HUD
-    this.hudSector.textContent = `SECTOR ${String(index + 1).padStart(2, '0')}`;
-    this.hudTitle.textContent = `${room.title} (by ${room.author})`;
-    this.hudTimerDisplay.textContent = '60.0s';
-    this.hudTimerDisplay.className = 'timer-display';
-    this.gracePill.classList.remove('active');
-    this.verdictOverlay.classList.remove('active');
+    // Update Start Button
+    this.startBtn.disabled = true;
+    this.startBtn.textContent = 'Running...';
 
-    // Create and embed iframe
-    this.iframeWrapper.innerHTML = '';
-    const iframe = document.createElement('iframe');
-    iframe.className = 'room-iframe';
-    iframe.src = room.path;
-    iframe.allow = 'autoplay; fullscreen; clipboard-write; gaming';
-    this.activeIframe = iframe;
-    this.iframeWrapper.appendChild(iframe);
+    // Send defrag:start signal to the room iframe
+    try {
+      this.roomIframe.contentWindow.postMessage({ type: 'defrag:start' }, '*');
+    } catch (e) {
+      console.warn('Could not post start signal', e);
+    }
 
-    // Open overlay
-    this.overlay.classList.add('active');
-
-    // Start 60-second timer
+    // Begin 100-second timer
     this.startCountdown();
   }
 
@@ -426,43 +300,30 @@ class DefragOverworld {
       const remaining = Math.max(0, this.TIMER_LIMIT_MS - elapsed);
       const remainingSec = (remaining / 1000).toFixed(1);
 
-      this.hudTimerDisplay.textContent = `${remainingSec}s`;
+      this.overlayTimer.textContent = `${remainingSec}s`;
 
-      if (remaining <= 10000) {
-        this.hudTimerDisplay.className = 'timer-display danger';
-      } else if (remaining <= 20000) {
-        this.hudTimerDisplay.className = 'timer-display warning';
-      } else {
-        this.hudTimerDisplay.className = 'timer-display';
+      if (remaining <= 15000) {
+        this.overlayTimer.className = 'overlay-timer warning';
       }
 
       if (remaining <= 0) {
         clearInterval(this.timerInterval);
         this.timerInterval = null;
-        this.triggerTimeoutWarning();
+        this.triggerTimeout();
       }
     }, 50);
   }
 
-  triggerTimeoutWarning() {
-    this.inGracePeriod = true;
-    console.log('[Host] 60s expired. Sending defrag:timeout to room with 5s grace period.');
+  triggerTimeout() {
+    // Send defrag:timeout to iframe
+    try {
+      this.roomIframe.contentWindow.postMessage({
+        type: 'defrag:timeout',
+        gracePeriodMs: this.GRACE_LIMIT_MS
+      }, '*');
+    } catch {}
 
-    // 1. Send timeout message to iframe
-    if (this.activeIframe && this.activeIframe.contentWindow) {
-      try {
-        this.activeIframe.contentWindow.postMessage({
-          type: 'defrag:timeout',
-          gracePeriodMs: this.GRACE_LIMIT_MS
-        }, '*');
-      } catch (e) {
-        console.warn('Failed to postMessage to iframe', e);
-      }
-    }
-
-    // 2. Start Grace Period HUD countdown
-    this.gracePill.classList.add('active');
-    this.hudTimerDisplay.className = 'timer-display danger';
+    this.graceIndicator.classList.add('active');
 
     const graceStart = Date.now();
     this.graceInterval = setInterval(() => {
@@ -470,89 +331,69 @@ class DefragOverworld {
       const remainingGrace = Math.max(0, this.GRACE_LIMIT_MS - elapsed);
       const graceSec = (remainingGrace / 1000).toFixed(1);
 
-      this.hudTimerDisplay.textContent = `+${graceSec}s`;
-      this.gracePill.textContent = `⚠️ GRACE: ${graceSec}s`;
+      this.graceIndicator.textContent = `Grace: ${graceSec}s`;
 
       if (remainingGrace <= 0) {
         clearInterval(this.graceInterval);
         this.graceInterval = null;
-        console.warn('[Host] Grace period exceeded without response. Forcing failure.');
-        this.handleRoomFinish(false, 'Sector timed out. Grace period exceeded without response.');
+        this.handleRoomCompletion(false, 'Room timed out. Grace period expired.');
       }
     }, 50);
   }
 
   handleProtocolMessage(event) {
-    if (!this.activeIframe || !this.currentRoom) return;
+    if (!this.currentRoom || !this.isGameRunning) return;
     const data = event.data;
     if (!data || typeof data !== 'object') return;
 
     if (data.type === 'defrag:complete' || data.type === 'room:complete') {
       const success = Boolean(data.success);
-      const result = typeof data.result === 'string' ? data.result : (success ? 'Sector cleared!' : 'Sector failed.');
-      this.handleRoomFinish(success, result);
+      const result = typeof data.result === 'string' ? data.result : (success ? 'Room cleared' : 'Room failed');
+      this.handleRoomCompletion(success, result);
     }
   }
 
-  handleRoomFinish(success, result) {
-    if (!this.currentRoom) return;
+  handleRoomCompletion(success, result) {
     this.stopTimers();
+    this.isGameRunning = false;
 
     const room = this.currentRoom;
     const roomIndex = this.currentRoomIndex;
 
-    // Play sound feedback
-    if (success) {
-      this.audio.playCleared();
-    } else {
-      this.audio.playFailed();
-    }
+    // Show result banner
+    this.resultTitle.textContent = success ? 'ROOM CLEARED' : 'ROOM FAILED';
+    this.resultText.textContent = result;
+    this.resultBanner.classList.add('active');
 
-    // Show verdict overlay inside modal
-    this.verdictBanner.textContent = success ? '★ SECTOR CLEARED ★' : '✕ SECTOR FAILED ✕';
-    this.verdictBanner.className = `verdict-banner ${success ? 'cleared' : 'failed'}`;
-    this.verdictDesc.textContent = result;
-    this.verdictOverlay.classList.add('active');
-
-    // Record room state
+    // Record state
     this.roomStates[room.id] = {
       state: success ? 'cleared' : 'failed',
       result: result
     };
 
-    // If this was the active room, advance current index
     if (roomIndex === this.currentIndex) {
       this.currentIndex = roomIndex + 1;
     }
 
     this.saveState();
 
-    // After 1.8 seconds, cleanly destroy iframe and close modal
+    // After 1.5s, close overlay and refresh list
     setTimeout(() => {
-      this.closeRoomModal();
-      this.renderTrack();
-      this.updateStats();
-
-      // Smooth scroll to the next room or completed modal
-      const nextNode = document.getElementById(`room-node-${this.currentIndex}`);
-      if (nextNode) {
-        nextNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 1800);
+      this.closeOverlay();
+      this.renderList();
+    }, 1500);
   }
 
-  closeRoomModal() {
+  closeOverlay() {
     this.stopTimers();
-    if (this.activeIframe) {
-      try {
-        this.activeIframe.src = 'about:blank';
-      } catch {}
-      this.activeIframe.remove();
-      this.activeIframe = null;
-    }
-    this.iframeWrapper.innerHTML = '';
+    this.isGameRunning = false;
+    try {
+      this.roomIframe.src = 'about:blank';
+    } catch {}
+    this.roomIframe.classList.remove('started');
     this.overlay.classList.remove('active');
-    this.verdictOverlay.classList.remove('active');
+    this.resultBanner.classList.remove('active');
+    this.graceIndicator.classList.remove('active');
     this.currentRoom = null;
   }
 
@@ -565,21 +406,9 @@ class DefragOverworld {
       clearInterval(this.graceInterval);
       this.graceInterval = null;
     }
-    this.inGracePeriod = false;
-  }
-
-  escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 }
 
-// Start Overworld when DOM ready
 window.addEventListener('DOMContentLoaded', () => {
-  window.overworld = new DefragOverworld();
+  window.overworld = new BarebonesOverworld();
 });

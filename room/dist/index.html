@@ -8,48 +8,23 @@
 </head>
 <body>
 
-  <div class="game-container">
-    <div class="header">
-      <div class="title-group">
-        <span class="badge">Sector 07</span>
-        <h1>Memory Matrix</h1>
-      </div>
-      <div class="badge" style="background: var(--accent-yellow);">60s Limit</div>
+  <div class="terminal-box">
+    <div class="terminal-header">
+      <div class="terminal-title">SECTOR 07: MEMORY MATRIX</div>
+      <div id="status-badge" class="status-badge">WAITING FOR HOST</div>
     </div>
 
-    <div class="stats-bar">
-      <div class="stat">
-        <span class="stat-label">Next Target</span>
-        <span class="stat-value" id="next-target">#1</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Elapsed</span>
-        <span class="stat-value" id="room-timer">0.0s</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Errors</span>
-        <span class="stat-value" id="mistakes-count" style="color: var(--accent-pink);">0</span>
-      </div>
+    <div id="instruction-text" class="instructions">
+      Waiting for host start signal to begin sector defragmentation...
     </div>
-
-    <p class="instructions">
-      Click numbers <strong>1 through 12</strong> in ascending numerical sequence to restore the cluster!
-    </p>
 
     <div class="grid" id="grid">
       <!-- Generated dynamically -->
     </div>
 
-    <div class="footer-controls">
-      <button class="give-up-btn" id="give-up-btn">Emergency Abort</button>
-      <div class="status-msg" id="status-msg">SYSTEM NOMINAL</div>
-    </div>
-
-    <!-- Timeout Grace Period Banner -->
-    <div class="grace-banner" id="grace-banner">
-      <h2>⚠️ HOST TIMEOUT WARNING</h2>
-      <p>60 seconds have elapsed! 5-second grace period initiated.</p>
-      <p style="color: var(--accent-yellow); font-size: 0.85rem;">Saving partial cluster state and returning to host...</p>
+    <div class="terminal-footer">
+      <span>Errors: <strong id="errors-count">0</strong></span>
+      <button id="give-up-btn" class="give-up-link">Abort Sector</button>
     </div>
   </div>
 

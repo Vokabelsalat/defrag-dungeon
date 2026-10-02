@@ -29,33 +29,45 @@ Your sole job is to help the participant build **one self-contained minigame or 
 
 ## 📋 REQUIRED METADATA: `room/dist/room.json`
 
-`room/dist/room.json` must be valid JSON and contain at least `title` and `author`:
+`room/dist/room.json` must be valid JSON and contain `title`, `author`, and `color`:
 
 ```json
 {
   "title": "Cosmic Wire Defuser",
   "author": "Jane Doe",
+  "color": "#3b82f6",
   "description": "Cut the correct wires in binary sequence before time runs out!"
 }
 ```
 
 - `title` *(string, required)*: The minigame display title.
 - `author` *(string, required)*: The participant's name or handle.
+- `color` *(string, required)*: A hex or CSS color string (e.g. `"#ff5722"`, `"#3b82f6"`, `"coral"`). This color is displayed on the overworld room card!
 - `description` *(string, optional)*: A short 1-sentence synopsis.
 
 ---
 
 ## ⚡ COMMUNICATION CONTRACT (postMessage)
 
-The host loads your minigame inside an `<iframe>`. You must conform to this lightweight contract:
+The host loads your minigame inside an `<iframe>`. You must conform to this contract:
 
-### 1. Auto-Start
-- The room starts automatically as soon as `room/dist/index.html` loads.
-- There is **no start message** sent from the host.
+### 1. Waiting for the Host "Start" Signal
+- The host loads your iframe in a dimmed preview mode (opacity: 0.2, unclickable).
+- **Your game MUST wait for the `{ type: 'defrag:start' }` signal from the host before enabling gameplay or starting internal timers.**
+- When `{ type: 'defrag:start' }` is received, begin gameplay immediately.
+
+```javascript
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'defrag:start') {
+    // Start game logic now!
+    startGame();
+  }
+});
+```
 
 ### 2. Time Limit
-- The room has a hard limit of **60 seconds**.
-- The game should be designed to be beatable or cleanly resolved within 10–45 seconds.
+- The room has a hard limit of **100 seconds**.
+- The game should be designed to be beatable or cleanly resolved within 15–60 seconds.
 
 ### 3. Reporting Completion (Win or Loss)
 When the game ends (player wins, loses, completes all rounds, or gives up), send a `postMessage` to `window.parent`:
@@ -68,8 +80,8 @@ window.parent.postMessage({
 }, '*');
 ```
 
-### 4. Handling 60-Second Timeout
-If 60 seconds expire without a completion message, the host sends your room:
+### 4. Handling 100-Second Timeout
+If 100 seconds expire without a completion message, the host sends your room:
 ```javascript
 { type: 'defrag:timeout', gracePeriodMs: 5000 }
 ```
@@ -88,28 +100,22 @@ window.addEventListener('message', (event) => {
 });
 ```
 
-*(If the grace period expires without a response, the host forcibly terminates the iframe and marks the room as failed).*
-
 ---
 
-## 🎨 CREATIVE FREEDOM
+## 🎨 GRAPHIC STYLE
 
-Inside `room/dist/`, you have total creative freedom!
-- Plain HTML5 canvas, SVG, CSS animations, or modern DOM.
-- 3D with Three.js / WebGL (bundled or inlined).
-- Audio via Web Audio API synthesis or royalty-free sounds.
-- Game genres: reflex games, ciphers, rhythm matching, trivia, memory matrix, physics toys, mazes, boss fights, or absurd comedic experiences.
-- Keep the gameplay punchy, accessible, and delightful.
+The overworld UI is intentionally ultra-barebones black-and-white.
+Your room should have its own distinct, standalone visual style inside `room/dist/` to show that the room is a separate, independent creation. Keep it clean and accessible.
 
 ---
 
 ## ✅ VERIFICATION CHECKLIST
 
 Before telling the user you are done:
-1. [ ] Is `room/dist/index.html` playable when opened in the browser?
-2. [ ] Does `room/dist/room.json` exist with valid `title` and `author`?
-3. [ ] Does the game start immediately without waiting for a signal?
+1. [ ] Is `room/dist/index.html` playable when opened?
+2. [ ] Does `room/dist/room.json` exist with valid `title`, `author`, and `color`?
+3. [ ] Does the game wait for `{ type: 'defrag:start' }` before beginning gameplay?
 4. [ ] Does it send `{ type: 'defrag:complete', success: ..., result: '...' }` to `window.parent` upon winning or losing?
 5. [ ] Does it handle `defrag:timeout` cleanly within the 5-second grace window?
-6. [ ] Are all asset paths relative (`./`), with no references to local filesystem paths or external dev servers?
+6. [ ] Are all asset paths relative (`./`)?
 7. [ ] Have you verified that NO files outside `room/` were created or altered?
