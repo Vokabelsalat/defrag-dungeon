@@ -377,15 +377,16 @@ const people = [
     s: 6,
     t: 9,
   },
-].map((p, i) => ({ ...p, id: i, img: `./portraits/${p.img}` }));
+].map((p, i) => ({
+  ...p,
+  id: i,
+  img: `./portraits/${p.img}`,
+  impact: 1 + Math.floor(Math.random() * 40),
+  maxNarrative: 1 + Math.floor(Math.random() * 40),
+}));
 
 const $ = (s) => document.querySelector(s);
 const screens = ["waiting", "draft", "battle", "result"];
-const skills = {
-  analysis: { label: "Analyze", stat: "a", beats: "story" },
-  systems: { label: "Disrupt", stat: "s", beats: "analysis" },
-  story: { label: "Rally", stat: "t", beats: "systems" },
-};
 const initiative = [2, 1, 0];
 let mode = "waiting",
   candidates = [],
@@ -393,10 +394,10 @@ let mode = "waiting",
   allies = [],
   enemies = [],
   active = 0,
+  enemyActive = 0,
   turn = 1,
-  allyHp = 100,
-  enemyHp = 100,
-  used = new Set(),
+  allyMax = 1,
+  enemyMax = 1,
   draftTimer,
   draftSeconds = 9,
   completeSent = false,
@@ -405,6 +406,13 @@ let mode = "waiting",
 function shuffle(list) {
   return [...list].sort(() => Math.random() - 0.5);
 }
+function renderBriefingPortraits() {
+  const featured = shuffle(people).slice(0, 3);
+  document.querySelectorAll("[data-brief-portrait]").forEach((image, i) => {
+    image.src = featured[i].img;
+    image.alt = `Portrait of ${featured[i].name}`;
+  });
+}
 function show(id) {
   screens.forEach((s) => $(`#${s}`).classList.toggle("visible", s === id));
   mode = id;
@@ -412,12 +420,8 @@ function show(id) {
 function fullName(p) {
   return p.name;
 }
-function specialty(p) {
-  const m = Math.max(p.a, p.s, p.t);
-  return p.a === m ? "Analysis" : p.s === m ? "Systems" : "Story";
-}
 function card(p, index) {
-  return `<button class="candidate" data-index="${index}" aria-pressed="false"><img src="${p.img}" alt="Portrait of ${p.name}"><div class="candidate-info"><h3>${p.name}</h3><p>${p.role}</p><div class="stats"><span>A ${p.a}</span><span>S ${p.s}</span><span>T ${p.t}</span></div></div></button>`;
+  return `<button class="candidate" data-index="${index}" aria-pressed="false"><img src="${p.img}" alt="Portrait of ${p.name}"><div class="candidate-info"><h3>${p.name}</h3><p>${p.role}</p><div class="stats combat-stats"><span>Impact ${p.impact}</span><span>Narrative ${p.maxNarrative}</span></div></div></button>`;
 }
 function begin() {
   if (mode !== "waiting") return;
@@ -455,70 +459,57 @@ function deploy(auto = false) {
       if (!selected.includes(p) && selected.length < 3) selected.push(p);
   }
   clearInterval(draftTimer);
-  allies = selected.map((p) => ({ ...p, hp: 3 }));
+  allies = selected.map((p) => ({ ...p, narrative: p.maxNarrative }));
   const available = people.filter((p) => !selected.includes(p));
   enemies = shuffle(available)
     .slice(0, 3)
-    .map((p) => ({ ...p, hp: 3 }));
+    .map((p) => ({ ...p, narrative: p.maxNarrative }));
   active = initiative[0];
+  enemyActive = initiative[0];
+  allyMax = allies.reduce((sum, p) => sum + p.maxNarrative, 0);
+  enemyMax = enemies.reduce((sum, p) => sum + p.maxNarrative, 0);
   $("#phase").textContent = "Tactical exchange";
   show("battle");
   renderBattle();
   $("#log").textContent = auto
-    ? "Mission control completed your squad. The inward operative acts first. Choose an approach."
-    : "Squad deployed. The inward operative acts first. Choose an approach.";
+    ? "Mission control completed your squad. Press Resolve to calculate the first exchange."
+    : "Squad deployed. Press Resolve to calculate the first exchange.";
 }
 function unit(p, i, foe = false) {
-  const best = Math.max(p.a, p.s, p.t);
-  return `<button class="unit ${foe ? "foe" : ""} ${!foe && i === active ? "active" : ""} ${!foe && used.has(i) ? "used" : ""}" data-index="${i}" disabled>
-    <span class="specialty">${specialty(p)}</span>
+  const isActive = foe ? i === enemyActive : i === active;
+  return `<button class="unit ${foe ? "foe" : ""} ${isActive ? "active" : ""} ${p.narrative <= 0 ? "used" : ""}" data-index="${i}" disabled>
+    <span class="specialty">${p.narrative <= 0 ? "Narrative ended" : "Ready"}</span>
     <span class="unit-portrait"><img src="${p.img}" alt="Portrait of ${p.name}"></span>
     <span class="unit-name">${p.name}</span>
-    <span class="unit-stats"><b title="Primary skill">✦ ${best}</b><b title="Stamina">♥ ${p.a + p.s + p.t}</b></span>
+    <span class="unit-stats"><b title="Impact">⚔ ${p.impact}</b><b title="Narrative">♥ ${Math.max(0, p.narrative)}/${p.maxNarrative}</b></span>
   </button>`;
 }
 function renderBattle() {
   $("#allies").innerHTML = allies.map((p, i) => unit(p, i)).join("");
   $("#enemies").innerHTML = enemies.map((p, i) => unit(p, i, true)).join("");
-  $("#allyHp").textContent = Math.max(0, allyHp);
-  $("#enemyHp").textContent = Math.max(0, enemyHp);
-  $("#allyBar").style.width = `${Math.max(0, allyHp)}%`;
-  $("#enemyBar").style.width = `${Math.max(0, enemyHp)}%`;
-  $("#turn").textContent = `Turn ${turn} / 6`;
+  const allyHp = allies.reduce((sum, p) => sum + Math.max(0, p.narrative), 0);
+  const enemyHp = enemies.reduce((sum, p) => sum + Math.max(0, p.narrative), 0);
+  $("#allyHp").textContent = `${allyHp}/${allyMax}`;
+  $("#enemyHp").textContent = `${enemyHp}/${enemyMax}`;
+  $("#allyBar").style.width = `${(allyHp / allyMax) * 100}%`;
+  $("#enemyBar").style.width = `${(enemyHp / enemyMax) * 100}%`;
+  $("#turn").textContent = `Exchange ${turn}`;
   document
     .querySelectorAll("#actions button")
     .forEach((b) => (b.disabled = locked));
 }
 $("#deploy").addEventListener("click", () => deploy(false));
-$("#actions").addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-skill]");
-  if (!b || locked || mode !== "battle") return;
-  act(b.dataset.skill);
+$("#fight").addEventListener("click", () => {
+  if (!locked && mode === "battle") act();
 });
 
-function roll(actor, skill, otherSkill) {
-  let score = 8 + actor[skills[skill].stat] + Math.floor(Math.random() * 10);
-  let note = "solid";
-  if (skills[skill].beats === otherSkill) {
-    score += 8;
-    note = "advantage";
-  } else if (skills[otherSkill].beats === skill) {
-    score -= 4;
-    note = "countered";
-  }
-  if (Math.random() < 0.12) {
-    score += 8;
-    note = "critical";
-  }
-  return { score: Math.max(5, score), note };
-}
-function animateAttack(attacker, target, direction) {
+function animateAttack(attacker, attackerIndex, target, targetIndex, direction) {
   return new Promise((resolve) => {
     const attackerEl = document.querySelector(
-      `${attacker} .unit[data-index="${direction === "right" ? active : target}"]`,
+      `${attacker} .unit[data-index="${attackerIndex}"]`,
     );
     const targetEl = document.querySelector(
-      `${direction === "right" ? "#enemies" : "#allies"} .unit[data-index="${direction === "right" ? target : active}"]`,
+      `${target} .unit[data-index="${targetIndex}"]`,
     );
     if (!attackerEl) {
       resolve();
@@ -535,44 +526,40 @@ function animateAttack(attacker, target, direction) {
     }, 920);
   });
 }
-async function act(skill) {
+async function act() {
   locked = true;
-  used.add(active);
-  const actor = allies[active],
-    enemyIndex = initiative[(turn - 1) % initiative.length],
-    foe = enemies[enemyIndex];
-  const enemySkill = shuffle(Object.keys(skills))[0],
-    ours = roll(actor, skill, enemySkill),
-    theirs = roll(foe, enemySkill, skill);
+  const actor = allies[active];
+  const foe = enemies[enemyActive];
+  const actorBefore = actor.narrative;
+  const foeBefore = foe.narrative;
   document
     .querySelectorAll("#actions button")
     .forEach((b) => (b.disabled = true));
-  $("#log").textContent =
-    `${actor.name} charges a ${skills[skill].label} attack…`;
-  await animateAttack("#allies", enemyIndex, "right");
+  $("#log").textContent = `${actor.name} charges with ${actor.impact} Impact…`;
+  await animateAttack("#allies", active, "#enemies", enemyActive, "right");
   if (completeSent) return;
-  $("#log").textContent =
-    `${foe.name} braces, then counters with ${skills[enemySkill].label}…`;
-  await animateAttack("#enemies", enemyIndex, "left");
+  $("#log").textContent = `${foe.name} counters with ${foe.impact} Impact…`;
+  await animateAttack("#enemies", enemyActive, "#allies", active, "left");
   if (completeSent) return;
-  enemyHp -= ours.score;
-  allyHp -= theirs.score;
-  $("#log").textContent =
-    `${actor.name}: ${ours.score} impact (${ours.note}). ${foe.name}: ${theirs.score} impact (${theirs.note}).`;
+  foe.narrative = Math.max(0, foe.narrative - actor.impact);
+  actor.narrative = Math.max(0, actor.narrative - foe.impact);
+  $("#log").textContent = `${actor.name}: ${actorBefore} Narrative − ${foe.impact} Impact = ${actor.narrative} Narrative. ${foe.name}: ${foeBefore} Narrative − ${actor.impact} Impact = ${foe.narrative} Narrative.`;
   renderBattle();
-  if (enemyHp <= 0 || allyHp <= 0 || turn >= 6) {
-    const win = enemyHp <= 0 || (allyHp > 0 && allyHp > enemyHp);
+  active = initiative.find((i) => allies[i].narrative > 0);
+  enemyActive = initiative.find((i) => enemies[i].narrative > 0);
+  if (active === undefined || enemyActive === undefined) {
+    const win = enemyActive === undefined && active !== undefined;
     finish(
       win,
       win
-        ? `Your task force prevailed with ${Math.max(0, allyHp)} resolve remaining.`
-        : `The rival team held the field with ${Math.max(0, enemyHp)} resolve remaining.`,
+        ? `Your lineup prevailed with ${allies.filter((p) => p.narrative > 0).length} operative${allies.filter((p) => p.narrative > 0).length === 1 ? "" : "s"} still in the narrative.`
+        : active === undefined && enemyActive === undefined
+          ? "Both lineups ran out of Narrative in the same exchange."
+          : `The rival lineup prevailed with ${enemies.filter((p) => p.narrative > 0).length} operative${enemies.filter((p) => p.narrative > 0).length === 1 ? "" : "s"} still in the narrative.`,
     );
     return;
   }
   turn++;
-  if (used.size === allies.length) used.clear();
-  active = initiative.find((i) => !used.has(i));
   locked = false;
   renderBattle();
 }
@@ -600,3 +587,4 @@ window.addEventListener("message", (e) => {
       "Mission control ended the operation after the 100-second limit.",
     );
 });
+renderBriefingPortraits();
