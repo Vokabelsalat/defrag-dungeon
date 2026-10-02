@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Find Andreas!</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main id="game" aria-live="polite">
+    <header>
+      <div class="brand">Find Andreas!</div>
+      <div class="progress" aria-label="Scene progress"><span id="round">1</span> / 4</div>
+      <div class="timer" aria-label="Time remaining"><span id="time">60</span>s</div>
+    </header>
+
+    <section id="scene" class="scene" aria-label="Crowded hidden-object scene"></section>
+
+    <footer>
+      <p id="prompt">Find the bearded man with glasses and crossed arms.</p>
+      <div class="strikes" id="strikes" aria-label="Mistakes remaining">● ● ●</div>
+    </footer>
+
+    <section id="curtain" class="curtain visible">
+      <img src="./andreas.png" alt="Andreas, the person to find">
+      <div>
+        <h1>Where’s Andreas?</h1>
+        <p>Find Andreas in four crowded scenes. Look for the glasses, beard, and crossed arms.</p>
+        <p class="status" id="status">Waiting for the dungeon…</p>
+      </div>
+    </section>
+  </main>
+  <script src="./game.js"></script>
+</body>
+</html>

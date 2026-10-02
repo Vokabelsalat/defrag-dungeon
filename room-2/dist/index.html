@@ -67,7 +67,9 @@
         st = 0,
         res = 0,
         K = {},
-        ac;
+        ac,
+        started = false,
+        completed = false;
       const rnd = (a, b) => a + Math.random() * (b - a),
         lvl = () => 1 + R * 0.12;
       const sh = (a) => ({
@@ -98,8 +100,7 @@
         P.y = ((e.clientY - b.top) * H) / b.height;
       }
       function press() {
-        if (S == "title" || (S == "end" && st <= 0)) start();
-        else if (S == "play" && G.tap) {
+        if (S == "play" && G.tap) {
           G.tap();
           bp(300, 0.04);
         }
@@ -540,16 +541,30 @@
       ];
       const order = [3, 1, 4, 0, 2, 4, 0, 2];
       function start() {
+        if (!started || completed) return;
         R = 0;
         lives = 4;
         wins = 0;
         nx();
       }
+      function complete(success, result) {
+        if (completed) return;
+        completed = true;
+        S = "end";
+        st = 0;
+        bp(success ? 880 : 120, 0.4);
+        window.parent.postMessage(
+          { type: "defrag:complete", success, result },
+          "*",
+        );
+      }
       function nx() {
+        if (wins >= 8) {
+          complete(true, "You solved all 8 Monday chores!");
+          return;
+        }
         if (R >= 8 || lives <= 0) {
-          S = "end";
-          st = 0.7;
-          bp(lives > 0 ? 880 : 120, 0.4);
+          complete(false, `You solved ${wins} of 8 Monday chores.`);
           return;
         }
         G = GL[order[R]];
@@ -583,7 +598,7 @@
             R++;
             nx();
           }
-        } else if (S == "end") st -= dt;
+        }
       }
       function hud() {
         B(-5, -5, W + 10, 58, "#2b2118");
@@ -612,7 +627,7 @@
           S == "title"
             ? "#c9d86a"
             : S == "end"
-              ? lives > 0
+              ? wins >= 8
                 ? "#7fd87f"
                 : "#a9c36e"
               : S == "res"
@@ -632,7 +647,7 @@
           if (Math.sin(T * 6) > -0.3)
             tx("TAP TO START", 200, 560, 36, "#ff5a4a");
         } else if (S == "end") {
-          const ok = lives > 0;
+          const ok = wins >= 8;
           face(200, 330, 120, ok ? 1 : 2, ok ? 0.9 : 0.3);
           tx(
             ok ? "YOU MADE IT!" : "CALLED IN SICK",
@@ -643,7 +658,6 @@
             1,
           );
           tx(`${wins}/8 chores done`, 200, 520, 34);
-          if (st <= 0) tx("TAP TO RETRY", 200, 570, 30, "#ffe14a");
         } else if (S == "intro") {
           tx(G.v, 200, 280, G.v.length > 12 ? 50 : 70, "#fff", 1);
           tx(G.h, 200, 340, 20, "#ffe14a");
@@ -673,6 +687,15 @@
         requestAnimationFrame(loop);
       }
       requestAnimationFrame(loop);
+      window.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "defrag:start" && !started) {
+          started = true;
+          start();
+        }
+        if (event.data && event.data.type === "defrag:timeout") {
+          complete(false, `Time ran out after ${wins} of 8 Monday chores.`);
+        }
+      });
     </script>
   </body>
 </html>
