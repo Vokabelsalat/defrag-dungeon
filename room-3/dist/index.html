@@ -18,7 +18,7 @@
         <div class="brief-grid"></div>
         <div class="dossier dossier-one"><img data-brief-portrait src="./portraits/jakob.avif" alt=""><span>Impact ?</span></div>
         <div class="dossier dossier-two"><img data-brief-portrait src="./portraits/andreas.avif" alt=""><span>Narrative ?</span></div>
-        <div class="dossier dossier-three"><img data-brief-portrait src="./portraits/jill.avif" alt=""><span>Ready</span></div>
+        <div class="dossier dossier-three"><img data-brief-portrait src="./portraits/jill.avif" alt=""><span>Strategy!</span></div>
         <div class="brief-mark">3<span>vs</span>3</div>
         <div class="scan-line"></div>
       </div>
@@ -26,7 +26,7 @@
         <h2>Build the lineup.<br>Shape the narrative.</h2>
         <div class="brief-steps">
           <p><b>1</b><span>Draft three researchers from five candidates.</span></p>
-          <p><b>2</b><span>Impact and Narrative are rolled once from 1–40.</span></p>
+          <p><b>2</b><span>Impact and Narrative roll once from 1–40.</span></p>
           <p><b>3</b><span>Resolve exact exchanges from the center outward.</span></p>
         </div>
         <p class="signal"><i></i>Waiting for mission control…</p>
@@ -35,7 +35,7 @@
 
     <section id="draft" class="screen">
       <div class="section-head">
-        <div><h2>Choose your lineup</h2><p>Pick 3 of 5. Impact and Narrative are rolled from 1–40 once, then stay fixed for the battle.</p></div>
+        <div><h2>Choose your lineup</h2><p>Pick 3 of 5. Impact and Narrative are rolled from 1–40 once.</p></div>
         <div class="draft-timer"><span id="draftTime">9</span>s</div>
       </div>
       <div id="candidates" class="candidates"></div>
@@ -57,9 +57,11 @@
         <div class="team-flag enemy-flag">Rivals</div>
       </div>
       <div class="console">
-        <p id="log">The two inward operatives exchange their exact Impact values.</p>
+        <p id="log">Choose a strategy. The next exchange begins automatically.</p>
         <div id="actions" class="actions">
-          <button id="fight">Resolve exchange <small>Both fighters make an impact</small></button>
+          <button data-strategy="direct">Direct <small>+8 Impact</small></button>
+          <button data-strategy="balanced">Balanced <small>+4 Impact · +4 Narrative guard</small></button>
+          <button data-strategy="guarded">Guarded <small>+8 Narrative guard</small></button>
         </div>
       </div>
     </section>

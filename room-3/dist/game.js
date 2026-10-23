@@ -398,10 +398,14 @@ let mode = "waiting",
   turn = 1,
   allyMax = 1,
   enemyMax = 1,
+  strategy = null,
+  autoTimer,
   draftTimer,
   draftSeconds = 9,
   completeSent = false,
-  locked = false;
+  awaitingStrategy = false,
+  locked = false,
+  audioContext;
 
 function shuffle(list) {
   return [...list].sort(() => Math.random() - 0.5);
@@ -470,10 +474,9 @@ function deploy(auto = false) {
   enemyMax = enemies.reduce((sum, p) => sum + p.maxNarrative, 0);
   $("#phase").textContent = "Tactical exchange";
   show("battle");
-  renderBattle();
-  $("#log").textContent = auto
-    ? "Mission control completed your squad. Press Resolve to calculate the first exchange."
-    : "Squad deployed. Press Resolve to calculate the first exchange.";
+  requestStrategy(auto
+    ? "Mission control completed your squad. Choose a strategy; the rival cycles Direct, Guarded, then Balanced."
+    : "Squad deployed. Choose a strategy; the rival cycles Direct, Guarded, then Balanced.");
 }
 function unit(p, i, foe = false) {
   const isActive = foe ? i === enemyActive : i === active;
@@ -481,7 +484,7 @@ function unit(p, i, foe = false) {
     <span class="specialty">${p.narrative <= 0 ? "Narrative ended" : "Ready"}</span>
     <span class="unit-portrait"><img src="${p.img}" alt="Portrait of ${p.name}"></span>
     <span class="unit-name">${p.name}</span>
-    <span class="unit-stats"><b title="Impact">⚔ ${p.impact}</b><b title="Narrative">♥ ${Math.max(0, p.narrative)}/${p.maxNarrative}</b></span>
+    <span class="unit-stats"><b data-stat="impact" title="Impact">⚔ ${p.impact}</b><b data-stat="narrative" title="Narrative">♥ ${Math.max(0, p.narrative)}</b></span>
   </button>`;
 }
 function renderBattle() {
@@ -489,19 +492,127 @@ function renderBattle() {
   $("#enemies").innerHTML = enemies.map((p, i) => unit(p, i, true)).join("");
   const allyHp = allies.reduce((sum, p) => sum + Math.max(0, p.narrative), 0);
   const enemyHp = enemies.reduce((sum, p) => sum + Math.max(0, p.narrative), 0);
-  $("#allyHp").textContent = `${allyHp}/${allyMax}`;
-  $("#enemyHp").textContent = `${enemyHp}/${enemyMax}`;
+  $("#allyHp").textContent = allyHp;
+  $("#enemyHp").textContent = enemyHp;
   $("#allyBar").style.width = `${(allyHp / allyMax) * 100}%`;
   $("#enemyBar").style.width = `${(enemyHp / enemyMax) * 100}%`;
   $("#turn").textContent = `Exchange ${turn}`;
   document
     .querySelectorAll("#actions button")
-    .forEach((b) => (b.disabled = locked));
+    .forEach((b) => {
+      b.disabled = locked || !awaitingStrategy;
+      b.classList.toggle("selected-strategy", b.dataset.strategy === strategy);
+    });
 }
 $("#deploy").addEventListener("click", () => deploy(false));
-$("#fight").addEventListener("click", () => {
-  if (!locked && mode === "battle") act();
+$("#actions").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-strategy]");
+  if (!button || locked || !awaitingStrategy || mode !== "battle") return;
+  strategy = button.dataset.strategy;
+  ensureAudio();
+  awaitingStrategy = false;
+  renderBattle();
+  animateStrategySelection(strategy);
+  $("#log").textContent = `${strategy[0].toUpperCase() + strategy.slice(1)} strategy locked in. The fight resumes now.`;
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => act(), 1250);
 });
+
+function ensureAudio() {
+  const AudioEngine = window.AudioContext || window.webkitAudioContext;
+  if (!AudioEngine) return;
+  audioContext ||= new AudioEngine();
+  if (audioContext.state === "suspended") audioContext.resume();
+}
+function playImpact(direction) {
+  if (!audioContext || audioContext.state !== "running") return;
+  const now = audioContext.currentTime;
+  const output = audioContext.createGain();
+  output.gain.setValueAtTime(0.0001, now);
+  output.gain.exponentialRampToValueAtTime(0.14, now + 0.008);
+  output.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+  let destination = output;
+  if (audioContext.createStereoPanner) {
+    const pan = audioContext.createStereoPanner();
+    pan.pan.value = direction === "right" ? 0.35 : -0.35;
+    output.connect(pan);
+    pan.connect(audioContext.destination);
+  } else {
+    output.connect(audioContext.destination);
+  }
+  const thump = audioContext.createOscillator();
+  thump.type = "triangle";
+  thump.frequency.setValueAtTime(direction === "right" ? 155 : 135, now);
+  thump.frequency.exponentialRampToValueAtTime(48, now + 0.16);
+  thump.connect(destination);
+  thump.start(now);
+  thump.stop(now + 0.18);
+
+  const length = Math.floor(audioContext.sampleRate * 0.1);
+  const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+  const crack = audioContext.createBufferSource();
+  const filter = audioContext.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 850;
+  crack.buffer = buffer;
+  crack.connect(filter);
+  filter.connect(destination);
+  crack.start(now);
+}
+
+function strategyValues(choice) {
+  if (choice === "direct") return { bonus: 8, block: 0 };
+  if (choice === "guarded") return { bonus: 0, block: 8 };
+  return { bonus: 4, block: 4 };
+}
+function animateStrategySelection(choice) {
+  const unit = document.querySelector(`#allies .unit[data-index="${active}"]`);
+  if (!unit) return;
+  const values = strategyValues(choice);
+  const impactBadge = unit.querySelector('[data-stat="impact"]');
+  const narrativeBadge = unit.querySelector('[data-stat="narrative"]');
+  const preview = document.createElement("span");
+  preview.className = "strategy-preview";
+  preview.textContent = choice === "direct"
+    ? `+${values.bonus} Impact`
+    : choice === "guarded"
+      ? `+${values.block} Narrative guard`
+      : `+${values.bonus} Impact · +${values.block} Narrative guard`;
+  unit.append(preview);
+  if (values.bonus) {
+    impactBadge?.classList.add("stat-boost");
+    impactBadge?.insertAdjacentHTML("beforeend", `<em>+${values.bonus}</em>`);
+  }
+  if (values.block) {
+    narrativeBadge?.classList.add("stat-boost");
+    narrativeBadge?.insertAdjacentHTML("beforeend", `<em>+${values.block}</em>`);
+  }
+  setTimeout(() => {
+    preview.remove();
+    impactBadge?.classList.remove("stat-boost");
+    narrativeBadge?.classList.remove("stat-boost");
+    unit.querySelectorAll(".unit-stats em").forEach((item) => item.remove());
+  }, 1150);
+}
+function requestStrategy(message) {
+  clearTimeout(autoTimer);
+  awaitingStrategy = true;
+  locked = false;
+  renderBattle();
+  $("#log").textContent = message;
+}
+function continueExchange() {
+  clearTimeout(autoTimer);
+  awaitingStrategy = false;
+  locked = true;
+  renderBattle();
+  autoTimer = setTimeout(() => {
+    locked = false;
+    act();
+  }, 900);
+}
 
 function animateAttack(attacker, attackerIndex, target, targetIndex, direction) {
   return new Promise((resolve) => {
@@ -518,7 +629,10 @@ function animateAttack(attacker, attackerIndex, target, targetIndex, direction) 
     attackerEl.classList.add(
       direction === "right" ? "attack-right" : "attack-left",
     );
-    setTimeout(() => targetEl?.classList.add("taking-hit"), 510);
+    setTimeout(() => {
+      targetEl?.classList.add("taking-hit");
+      playImpact(direction);
+    }, 510);
     setTimeout(() => {
       attackerEl.classList.remove("attack-right", "attack-left");
       targetEl?.classList.remove("taking-hit");
@@ -527,23 +641,31 @@ function animateAttack(attacker, attackerIndex, target, targetIndex, direction) 
   });
 }
 async function act() {
+  if (locked || mode !== "battle") return;
+  clearTimeout(autoTimer);
   locked = true;
   const actor = allies[active];
   const foe = enemies[enemyActive];
   const actorBefore = actor.narrative;
   const foeBefore = foe.narrative;
+  const rivalStrategy = ["direct", "guarded", "balanced"][(turn - 1) % 3];
+  const ours = strategyValues(strategy);
+  const theirs = strategyValues(rivalStrategy);
+  const actorDamage = Math.max(1, actor.impact + ours.bonus - theirs.block);
+  const foeDamage = Math.max(1, foe.impact + theirs.bonus - ours.block);
   document
     .querySelectorAll("#actions button")
     .forEach((b) => (b.disabled = true));
-  $("#log").textContent = `${actor.name} charges with ${actor.impact} Impact…`;
+  $("#log").textContent = `${actor.name} advances using the ${strategy} strategy…`;
   await animateAttack("#allies", active, "#enemies", enemyActive, "right");
   if (completeSent) return;
-  $("#log").textContent = `${foe.name} counters with ${foe.impact} Impact…`;
+  $("#log").textContent = `${foe.name} counters using the ${rivalStrategy} strategy…`;
   await animateAttack("#enemies", enemyActive, "#allies", active, "left");
   if (completeSent) return;
-  foe.narrative = Math.max(0, foe.narrative - actor.impact);
-  actor.narrative = Math.max(0, actor.narrative - foe.impact);
-  $("#log").textContent = `${actor.name}: ${actorBefore} Narrative − ${foe.impact} Impact = ${actor.narrative} Narrative. ${foe.name}: ${foeBefore} Narrative − ${actor.impact} Impact = ${foe.narrative} Narrative.`;
+  foe.narrative = Math.max(0, foe.narrative - actorDamage);
+  actor.narrative = Math.max(0, actor.narrative - foeDamage);
+  const characterEnded = foe.narrative === 0 || actor.narrative === 0;
+  $("#log").textContent = `${actor.name}: ${actorBefore} Narrative − (${foe.impact} Impact + ${theirs.bonus} bonus − ${ours.block} block) = ${actor.narrative}. ${foe.name}: ${foeBefore} Narrative − (${actor.impact} Impact + ${ours.bonus} bonus − ${theirs.block} block) = ${foe.narrative}.`;
   renderBattle();
   active = initiative.find((i) => allies[i].narrative > 0);
   enemyActive = initiative.find((i) => enemies[i].narrative > 0);
@@ -560,13 +682,17 @@ async function act() {
     return;
   }
   turn++;
-  locked = false;
-  renderBattle();
+  if (characterEnded) {
+    requestStrategy("A character's Narrative ended. Choose a strategy before the new matchup begins.");
+  } else {
+    continueExchange();
+  }
 }
 function finish(success, text) {
   if (completeSent) return;
   completeSent = true;
   clearInterval(draftTimer);
+  clearTimeout(autoTimer);
   show("result");
   $("#phase").textContent = "Debrief";
   $("#resultSeal").textContent = success ? "✓" : "×";

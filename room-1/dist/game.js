@@ -13,10 +13,10 @@ let seconds = 60;
 let ticker = null;
 let foundAt = 0;
 const layouts = [
-  { count: 78, x: 76, y: 68, size: 58 },
-  { count: 96, x: 19, y: 62, size: 50 },
-  { count: 118, x: 69, y: 28, size: 43 },
-  { count: 142, x: 31, y: 39, size: 37 }
+  { x: 76, y: 68, scale: 1 },
+  { x: 19, y: 62, scale: .96 },
+  { x: 69, y: 28, scale: .92 },
+  { x: 31, y: 39, scale: .88 }
 ];
 
 function rng(seed) {
@@ -24,18 +24,14 @@ function rng(seed) {
   return () => ((n = Math.imul(1664525, n) + 1013904223 >>> 0) / 4294967296);
 }
 
-function makePerson(i, random, count) {
+function makePerson(col, row, cols, rows, size, random) {
   const p = document.createElement('button');
   p.className = 'person';
   p.type = 'button';
   p.setAttribute('aria-label', 'Crowd member');
-  const cols = Math.ceil(Math.sqrt(count * 1.6));
-  const rows = Math.ceil(count / cols);
-  const col = i % cols;
-  const row = Math.floor(i / cols);
-  const x = 3 + (col + .5) * 94 / cols + (random() - .5) * 3.5;
-  const y = 4 + (row + .5) * 92 / rows + (random() - .5) * 4;
-  const h = Math.min(70, 430 / rows) * (.84 + random() * .28);
+  const x = (col + .5 + (random() - .5) * .28) * 100 / cols;
+  const y = (row + .5 + (random() - .5) * .22) * 100 / rows;
+  const h = size * (.94 + random() * .12);
   p.style.cssText = `left:${x}%;top:${y}%;--h:${h}px;--w:${h * .62}px;--r:${(random()-.5)*12}deg;--fill:${random()>.55?'#000':'#fff'};--arm:${(random()-.5)*55}deg`;
   const hat = random() > .64 ? '<i class="hat"></i>' : '';
   const glasses = random() > .3 ? '<i class="eye l"></i><i class="eye r"></i>' : '';
@@ -49,12 +45,19 @@ function renderRound() {
   scene.replaceChildren();
   const cfg = layouts[round];
   const random = rng(7123 + round * 997);
-  for (let i = 0; i < cfg.count; i++) scene.append(makePerson(i, random, cfg.count));
+  const size = Math.max(42, Math.min(68, scene.clientHeight / 10.5)) * cfg.scale;
+  const cols = Math.max(1, Math.ceil(scene.clientWidth / (size * .75)));
+  const rows = Math.max(1, Math.ceil(scene.clientHeight / (size * .84)));
+  const crowd = document.createDocumentFragment();
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) crowd.append(makePerson(col, row, cols, rows, size, random));
+  }
+  scene.append(crowd);
   const target = document.createElement('button');
   target.type = 'button';
   target.className = 'andreas';
   target.setAttribute('aria-label', 'Andreas');
-  target.style.cssText = `left:${cfg.x}%;top:${cfg.y}%;--h:${cfg.size}px;--w:${cfg.size * .64}px;--r:${round % 2 ? -4 : 3}deg`;
+  target.style.cssText = `left:${cfg.x}%;top:${cfg.y}%;--h:${size}px;--w:${size * .64}px;--r:${round % 2 ? -4 : 3}deg`;
   target.innerHTML = '<img src="./andreas.png" alt="">';
   target.addEventListener('click', () => found(target));
   scene.append(target);
